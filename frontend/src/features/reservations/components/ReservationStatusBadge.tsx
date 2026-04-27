@@ -1,9 +1,10 @@
+import { Badge, type BadgeTone } from "../../../shared/ui";
 import type { ReservationStatus } from "../schemas/reservation";
 
-const styles: Record<ReservationStatus, string> = {
-  ACTIVE: "bg-emerald-100 text-emerald-800",
-  CANCELLED: "bg-slate-200 text-slate-700",
-  EXPIRED: "bg-amber-100 text-amber-800"
+const tones: Record<ReservationStatus, BadgeTone> = {
+  ACTIVE: "success",
+  CANCELLED: "muted",
+  EXPIRED: "warning"
 };
 
 const labels: Record<ReservationStatus, string> = {
@@ -16,10 +17,8 @@ type ReservationStatusBadgeProps = {
   status: ReservationStatus;
 };
 
-export const ReservationStatusBadge = ({ status }: ReservationStatusBadgeProps) => (
-  <span
-    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${styles[status]}`}
-  >
-    {labels[status]}
-  </span>
+export const ReservationStatusBadge = ({
+  status
+}: ReservationStatusBadgeProps) => (
+  <Badge tone={tones[status]}>{labels[status]}</Badge>
 );
