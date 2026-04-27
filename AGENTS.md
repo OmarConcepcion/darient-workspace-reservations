@@ -24,6 +24,38 @@ Este proyecto sigue **Spec-Driven Development (SDD) with AI**. Antes de implemen
 - No agregar librerías nuevas sin justificación.
 - Mantener trazabilidad con commits pequeños y descriptivos: un commit por subtarea o bloque funcional acordado.
 
+## Reglas de etiquetado de fases
+
+Cada archivo de fase en `docs/phases/`, `backend/docs/phases/` y `frontend/docs/phases/` debe reflejar su estado tanto en el **nombre del archivo** como en el **contenido interno**.
+
+### Sufijo en el nombre del archivo
+
+El nombre del archivo debe terminar con el estado de la fase antes de la extensión:
+
+| Estado | Sufijo en nombre de archivo | Ejemplo |
+|---|---|---|
+| Completada | `.COMPLETED` | `phase-01-foundation.COMPLETED.md` |
+| En progreso (parcial) | `.PARTIAL` | `phase-03-iot-integration.PARTIAL.md` |
+| Pendiente | `.PENDING` | `phase-04-frontend-dashboard.PENDING.md` |
+
+Cuando una fase cambie de estado, **renombrar el archivo** para que el sufijo refleje el nuevo estado.
+
+### Estructura interna del archivo de fase
+
+La segunda línea del archivo debe incluir el badge de estado:
+
+```md
+> **STATUS: ✅ COMPLETED**   ← fase completa
+> **STATUS: 🔄 IN PROGRESS** ← fase parcial
+> **STATUS: ⏳ PENDING**     ← fase pendiente
+```
+
+Para fases **PARTIAL**: primero la sección `## Pending` con las tareas `[ ]` sin completar, luego la sección `## Completed` con las tareas `[x]` ya hechas.
+
+Para fases **COMPLETED**: solo la sección `## Completed` con todas las tareas `[x]`.
+
+Para fases **PENDING**: solo la sección `## Pending` con todas las tareas `[ ]` pendientes.
+
 ## Reglas del iot-simulator
 
 El `iot-simulator` es una caja negra.
