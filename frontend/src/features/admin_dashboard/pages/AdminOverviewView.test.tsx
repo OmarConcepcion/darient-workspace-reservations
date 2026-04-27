@@ -44,6 +44,12 @@ describe("AdminOverviewView", () => {
             }
           ]
         })
+      ),
+      http.get(`${TEST_API_BASE_URL}/reservations`, () =>
+        HttpResponse.json({
+          data: [],
+          pagination: { page: 1, page_size: 1, total: 0 }
+        })
       )
     );
 
@@ -63,6 +69,12 @@ describe("AdminOverviewView", () => {
       ),
       http.get(`${TEST_API_BASE_URL}/places`, () =>
         HttpResponse.json({ data: [] })
+      ),
+      http.get(`${TEST_API_BASE_URL}/reservations`, () =>
+        HttpResponse.json({
+          data: [],
+          pagination: { page: 1, page_size: 1, total: 0 }
+        })
       )
     );
 

@@ -7,9 +7,9 @@ export type ButtonSize = "sm" | "md";
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-brand-600 text-white shadow-sm shadow-brand-700/20 hover:bg-brand-700 active:bg-brand-800 focus-visible:ring-brand-300",
+    "bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-lg shadow-brand-700/20 hover:from-brand-500 hover:to-brand-800 active:to-brand-900 focus-visible:ring-brand-300",
   secondary:
-    "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm focus-visible:ring-slate-300",
+    "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm shadow-slate-900/[0.03] focus-visible:ring-slate-300",
   ghost:
     "text-slate-700 hover:bg-slate-100 focus-visible:ring-slate-300",
   danger:
@@ -17,12 +17,12 @@ const variantStyles: Record<ButtonVariant, string> = {
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: "h-8 gap-1.5 px-3 text-xs",
-  md: "h-10 gap-2 px-4 text-sm"
+  sm: "min-h-9 gap-1.5 px-3 text-xs",
+  md: "min-h-11 gap-2 px-4 text-sm"
 };
 
 const baseStyles =
-  "inline-flex items-center justify-center rounded-lg font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex cursor-pointer items-center justify-center rounded-xl font-semibold transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60";
 
 export const buttonClasses = (
   variant: ButtonVariant = "primary",

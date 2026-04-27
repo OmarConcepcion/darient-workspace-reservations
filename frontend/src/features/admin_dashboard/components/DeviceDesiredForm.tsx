@@ -109,7 +109,7 @@ export const DeviceDesiredForm = ({
           </Field>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+        <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-end">
           <Button
             type="button"
             variant="ghost"

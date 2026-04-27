@@ -72,7 +72,7 @@ describe("ReservationsListView", () => {
     renderWithProviders(<ReservationsListView />);
 
     expect(await screen.findByText("alice@example.com")).toBeInTheDocument();
-    expect(screen.getByText("Sky Room")).toBeInTheDocument();
+    expect(screen.getAllByText("Sky Room").length).toBeGreaterThan(0);
     expect(screen.getByText("Active")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Cancel" })

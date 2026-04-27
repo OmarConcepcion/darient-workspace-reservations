@@ -20,8 +20,8 @@ export const AlertsTable = ({ alerts }: AlertsTableProps) => {
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200/80 text-sm">
-          <thead className="bg-slate-50/70 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+        <table className="min-w-[760px] divide-y divide-slate-200/80 text-sm lg:min-w-full">
+          <thead className="bg-slate-50/70 text-left text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             <tr>
               <th scope="col" className="px-5 py-3">
                 Type

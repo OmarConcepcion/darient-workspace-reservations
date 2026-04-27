@@ -13,9 +13,9 @@ export const Card = ({
 }: CardProps) => (
   <div
     className={cn(
-      "rounded-2xl border border-slate-200/80 bg-white/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] backdrop-blur-sm",
+      "rounded-3xl border border-slate-200/75 bg-white/85 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.42)] backdrop-blur-sm",
       interactive &&
-        "transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]",
+        "transition duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_24px_70px_-44px_rgba(79,70,229,0.45)]",
       className
     )}
     {...props}

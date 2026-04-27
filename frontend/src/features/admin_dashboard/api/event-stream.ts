@@ -15,6 +15,7 @@ type ConnectArgs = {
   apiKey: string;
   signal: AbortSignal;
   handlers: EventStreamHandlers;
+  onOpen?: () => void;
   onError?: (error: unknown) => void;
 };
 
@@ -23,6 +24,7 @@ export const connectEventStream = async ({
   apiKey,
   signal,
   handlers,
+  onOpen,
   onError
 }: ConnectArgs): Promise<void> => {
   const response = await fetch(`${baseUrl}/admin/events/stream`, {
@@ -36,6 +38,8 @@ export const connectEventStream = async ({
   if (!response.ok || !response.body) {
     throw new Error(`SSE connection failed with status ${response.status}`);
   }
+
+  onOpen?.();
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();

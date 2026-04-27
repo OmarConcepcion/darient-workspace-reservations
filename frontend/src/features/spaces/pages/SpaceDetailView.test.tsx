@@ -50,10 +50,10 @@ describe("SpaceDetailView", () => {
     expect(
       await screen.findByRole("heading", { name: "Sky Room" })
     ).toBeInTheDocument();
-    expect(await screen.findByText("Headquarters")).toBeInTheDocument();
-    expect(screen.getByText("Floor 3")).toBeInTheDocument();
-    expect(screen.getByText("OFFICE_1")).toBeInTheDocument();
-    expect(screen.getByText("America/Panama")).toBeInTheDocument();
+    expect((await screen.findAllByText("Headquarters")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Floor 3").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("OFFICE_1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("America/Panama").length).toBeGreaterThan(0);
   });
 
   it("renders the error state when the space is missing", async () => {

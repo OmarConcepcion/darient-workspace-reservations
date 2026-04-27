@@ -108,7 +108,7 @@ export const SpaceMonitoringView = () => {
     <section className="space-y-8">
       <Link
         to="/admin"
-        className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 transition hover:text-slate-900"
+        className="inline-flex min-h-11 items-center gap-2 rounded-2xl px-1 text-sm font-semibold text-slate-500 transition hover:text-brand-700"
       >
         <ChevronLeftIcon size={16} />
         Back to admin
@@ -141,7 +141,7 @@ export const SpaceMonitoringView = () => {
             }
           />
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label="Avg CO₂"
               value={stats.co2 !== null ? `${stats.co2} ppm` : "—"}
@@ -175,15 +175,19 @@ export const SpaceMonitoringView = () => {
 
           <TelemetryChart points={points} isLive={status === "open" || status === "connecting"} />
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <DeviceReportedPanel
-              desired={snapshot.deviceDesired}
-              reported={snapshot.deviceReported}
-            />
-            <DeviceDesiredForm
-              spaceId={snapshot.spaceId}
-              desired={snapshot.deviceDesired}
-            />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.85fr)]">
+            <div className="min-w-0">
+              <DeviceReportedPanel
+                desired={snapshot.deviceDesired}
+                reported={snapshot.deviceReported}
+              />
+            </div>
+            <div className="min-w-0">
+              <DeviceDesiredForm
+                spaceId={snapshot.spaceId}
+                desired={snapshot.deviceDesired}
+              />
+            </div>
           </div>
 
           <section className="space-y-3">

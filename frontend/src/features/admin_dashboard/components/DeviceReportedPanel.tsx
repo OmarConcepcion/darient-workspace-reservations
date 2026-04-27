@@ -25,7 +25,7 @@ export const DeviceReportedPanel = ({
 }: DeviceReportedPanelProps) => (
   <Card>
     <div className="space-y-5 p-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-sm font-semibold text-slate-900">Device state</h3>
           <p className="text-xs text-slate-500">
@@ -129,9 +129,11 @@ const StateColumn = ({
     {rows ? (
       <dl className="space-y-2 text-sm">
         {rows.map((row) => (
-          <div key={row.label} className="flex items-center justify-between gap-3">
+          <div key={row.label} className="flex items-start justify-between gap-3">
             <dt className="text-slate-500">{row.label}</dt>
-            <dd className="font-medium text-slate-900">{row.value}</dd>
+            <dd className="min-w-0 text-right font-medium text-slate-900">
+              {row.value}
+            </dd>
           </div>
         ))}
       </dl>

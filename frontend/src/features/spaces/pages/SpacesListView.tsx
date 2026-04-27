@@ -1,11 +1,14 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 
 import { normalizeApiError } from "../../../shared/api/errors";
 import {
   BuildingIcon,
   Button,
+  Card,
+  ChevronDownIcon,
   EmptyState,
   ErrorState,
+  LayersIcon,
   PageHeader,
   SearchIcon,
   Skeleton,
@@ -16,6 +19,7 @@ import { SpaceCard } from "../components/SpaceCard";
 import { useSpaces } from "../hooks/use-spaces";
 
 type SortKey = "name_asc" | "name_desc" | "capacity_asc" | "capacity_desc";
+type ViewMode = "grid" | "list";
 
 const SORT_LABELS: Record<SortKey, string> = {
   name_asc: "Name (A–Z)",
@@ -30,7 +34,10 @@ export const SpacesListView = () => {
 
   const [search, setSearch] = useState("");
   const [placeFilter, setPlaceFilter] = useState<string>("all");
+  const [locationFilter, setLocationFilter] = useState<string>("all");
   const [sort, setSort] = useState<SortKey>("name_asc");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const deferredSearch = useDeferredValue(search);
 
   const placesById = useMemo(() => {
     const map = new Map<string, Place>();
@@ -40,13 +47,24 @@ export const SpacesListView = () => {
     return map;
   }, [placesQuery.data]);
 
+  const locationOptions = useMemo(() => {
+    const locations = new Set<string>();
+    for (const space of spacesQuery.data ?? []) {
+      if (space.locationReference) locations.add(space.locationReference);
+    }
+    return Array.from(locations).sort((a, b) => a.localeCompare(b));
+  }, [spacesQuery.data]);
+
   const filteredSpaces = useMemo(() => {
     const allSpaces = spacesQuery.data ?? [];
-    const q = search.trim().toLowerCase();
+    const q = deferredSearch.trim().toLowerCase();
 
     return allSpaces
       .filter((space) => {
         if (placeFilter !== "all" && space.placeId !== placeFilter) return false;
+        if (locationFilter !== "all" && space.locationReference !== locationFilter) {
+          return false;
+        }
         if (q) {
           const inName = space.name.toLowerCase().includes(q);
           const inLocation = space.locationReference?.toLowerCase().includes(q) ?? false;
@@ -67,13 +85,15 @@ export const SpacesListView = () => {
             return b.capacity - a.capacity;
         }
       });
-  }, [spacesQuery.data, search, placeFilter, sort]);
+  }, [spacesQuery.data, deferredSearch, placeFilter, locationFilter, sort]);
 
-  const hasActiveFilters = search.trim() !== "" || placeFilter !== "all";
+  const hasActiveFilters =
+    search.trim() !== "" || placeFilter !== "all" || locationFilter !== "all";
 
   const clearFilters = () => {
     setSearch("");
     setPlaceFilter("all");
+    setLocationFilter("all");
   };
 
   return (
@@ -81,7 +101,7 @@ export const SpacesListView = () => {
       <PageHeader
         eyebrow="Workspaces"
         title="Spaces"
-        description="All bookable workspaces across configured places. View details, check capacity and find the right space for your needs."
+        description="All bookable workspaces across configured places. View details, check capacity, and find the right room without fighting the layout."
       />
 
       {spacesQuery.isLoading ? (
@@ -100,58 +120,98 @@ export const SpacesListView = () => {
         />
       ) : (
         <>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
-            <div className="relative flex-1">
-              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
-                <SearchIcon size={15} />
-              </span>
-              <input
-                type="text"
-                placeholder="Search spaces by name or location…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
-              />
-            </div>
+          <Card className="p-4 sm:p-5">
+            <div className="grid gap-3 lg:grid-cols-[minmax(280px,1fr)_auto_auto_auto_auto]">
+              <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
+                  <SearchIcon size={18} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search spaces by name or location..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-800 shadow-sm shadow-slate-900/[0.02] placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100"
+                />
+              </div>
 
-            <select
-              value={placeFilter}
-              onChange={(e) => setPlaceFilter(e.target.value)}
-              className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
-            >
-              <option value="all">All places</option>
-              {placesQuery.data?.map((place) => (
-                <option key={place.id} value={place.id}>
-                  {place.name}
-                </option>
-              ))}
-            </select>
+              <FilterSelect
+                label="Place"
+                value={placeFilter}
+                onChange={setPlaceFilter}
+                icon={<BuildingIcon size={17} />}
+              >
+                <option value="all">All places</option>
+                {placesQuery.data?.map((place) => (
+                  <option key={place.id} value={place.id}>
+                    {place.name}
+                  </option>
+                ))}
+              </FilterSelect>
 
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortKey)}
-              className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
-            >
-              {(Object.entries(SORT_LABELS) as [SortKey, string][]).map(([key, label]) => (
-                <option key={key} value={key}>
-                  Sort: {label}
-                </option>
-              ))}
-            </select>
+              <FilterSelect
+                label="Floor"
+                value={locationFilter}
+                onChange={setLocationFilter}
+                icon={<LayersIcon size={17} />}
+              >
+                <option value="all">All floors</option>
+                {locationOptions.map((location) => (
+                  <option key={location} value={location}>
+                    {location}
+                  </option>
+                ))}
+              </FilterSelect>
 
-            {hasActiveFilters ? (
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
-                <XIcon size={14} />
+              <FilterSelect
+                label="Sort by"
+                value={sort}
+                onChange={(value) => setSort(value as SortKey)}
+                icon={<ChevronDownIcon size={17} />}
+              >
+                {(Object.entries(SORT_LABELS) as [SortKey, string][]).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </FilterSelect>
+
+              <Button
+                variant={hasActiveFilters ? "secondary" : "ghost"}
+                size="md"
+                onClick={clearFilters}
+                disabled={!hasActiveFilters}
+                className="justify-center"
+              >
+                <XIcon size={15} />
                 Clear filters
               </Button>
-            ) : null}
-          </div>
+            </div>
+          </Card>
 
-          <p className="text-sm text-slate-500">
-            {filteredSpaces.length === (spacesQuery.data ?? []).length
-              ? `${filteredSpaces.length} space${filteredSpaces.length !== 1 ? "s" : ""}`
-              : `${filteredSpaces.length} of ${(spacesQuery.data ?? []).length} spaces`}
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-medium text-slate-600">
+              {filteredSpaces.length === (spacesQuery.data ?? []).length
+                ? `${filteredSpaces.length} space${filteredSpaces.length !== 1 ? "s" : ""}`
+                : `${filteredSpaces.length} of ${(spacesQuery.data ?? []).length} spaces`}
+            </p>
+            <div className="inline-flex w-fit rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+              {(["grid", "list"] as ViewMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setViewMode(mode)}
+                  className={`min-h-10 rounded-xl px-4 text-xs font-bold capitalize transition ${
+                    viewMode === mode
+                      ? "bg-brand-50 text-brand-700 shadow-sm"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {filteredSpaces.length === 0 ? (
             <EmptyState
@@ -165,12 +225,19 @@ export const SpacesListView = () => {
               }
             />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid gap-5 lg:grid-cols-2 2xl:grid-cols-3"
+                  : "grid gap-5"
+              }
+            >
               {filteredSpaces.map((space) => (
                 <SpaceCard
                   key={space.id}
                   space={space}
                   place={placesById.get(space.placeId)}
+                  layout={viewMode}
                 />
               ))}
             </div>
@@ -185,10 +252,43 @@ const SpacesSkeleton = () => (
   <div
     aria-busy="true"
     aria-label="Loading spaces"
-    className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+    className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3"
   >
     {Array.from({ length: 6 }).map((_, index) => (
-      <Skeleton key={index} className="h-44" />
+      <Skeleton key={index} className="h-56" />
     ))}
   </div>
+);
+
+type FilterSelectProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+};
+
+const FilterSelect = ({
+  label,
+  value,
+  onChange,
+  icon,
+  children
+}: FilterSelectProps) => (
+  <label className="relative min-w-0 lg:min-w-44">
+    <span className="sr-only">{label}</span>
+    <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-500">
+      {icon}
+    </span>
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="min-h-12 w-full appearance-none rounded-2xl border border-slate-200 bg-white py-2 pl-11 pr-9 text-sm font-medium text-slate-800 shadow-sm shadow-slate-900/[0.02] focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100"
+    >
+      {children}
+    </select>
+    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
+      <ChevronDownIcon size={16} />
+    </span>
+  </label>
 );

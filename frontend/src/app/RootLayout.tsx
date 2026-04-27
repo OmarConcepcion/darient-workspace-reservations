@@ -1,6 +1,13 @@
 import { NavLink, Outlet } from "react-router-dom";
 
-import { ActivityIcon, BuildingIcon, CalendarIcon, cn, SparklesIcon } from "../shared/ui";
+import { useEventStream } from "../features/admin_dashboard/hooks/use-event-stream";
+import {
+  ActivityIcon,
+  BuildingIcon,
+  CalendarIcon,
+  cn,
+  SparklesIcon
+} from "../shared/ui";
 
 const navItems = [
   { to: "/spaces", label: "Spaces", icon: <BuildingIcon size={14} /> },
@@ -8,75 +15,117 @@ const navItems = [
   { to: "/admin", label: "Admin", icon: <ActivityIcon size={14} /> }
 ];
 
-export const RootLayout = () => (
-  <div className="min-h-screen bg-slate-50/40 text-slate-800">
-    <header className="sticky top-0 z-30 border-b border-slate-200/60 bg-white/90 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center gap-0 px-4 py-0 sm:px-6">
-        <NavLink
-          to="/"
-          aria-label="Go to home"
-          className="group flex items-center gap-2.5 py-3 pr-4"
-        >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-sm shadow-brand-700/30 ring-1 ring-brand-700/20 transition group-hover:scale-105">
-            <SparklesIcon size={15} />
-          </span>
-          <div className="leading-tight">
-            <p className="text-sm font-semibold tracking-tight text-slate-900">
-              Darient Workspaces
-            </p>
-            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">
-              Reservations
-            </p>
-          </div>
-        </NavLink>
+export const RootLayout = () => {
+  const iotStatus = useEventStream({});
 
-        <div aria-hidden="true" className="h-5 w-px bg-slate-200 mx-1" />
-
-        <nav aria-label="Primary" className="flex items-center text-sm">
-          {navItems.map((item) => (
+  return (
+    <div className="min-h-screen overflow-x-hidden text-slate-800">
+      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 shadow-[0_16px_50px_-44px_rgba(15,23,42,0.6)] backdrop-blur-xl">
+        <div className="app-container flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:py-0">
+          <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center">
             <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  "relative flex items-center gap-1.5 px-3.5 py-3 font-medium transition",
-                  isActive
-                    ? "text-brand-700"
-                    : "text-slate-500 hover:text-slate-900"
-                )
-              }
+              to="/"
+              aria-label="Go to home"
+              className="group flex min-w-0 items-center gap-3 md:py-4"
             >
-              {({ isActive }) => (
-                <>
-                  <span className={cn("transition", isActive ? "text-brand-600" : "text-slate-400")}>
-                    {item.icon}
-                  </span>
-                  {item.label}
-                  {isActive ? (
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-x-3.5 -bottom-px h-0.5 rounded-full bg-gradient-to-r from-brand-500 to-brand-700"
-                    />
-                  ) : null}
-                </>
-              )}
+              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 via-brand-600 to-brand-800 text-white shadow-lg shadow-brand-700/25 ring-1 ring-white/70 transition duration-200 group-hover:-translate-y-0.5">
+                <SparklesIcon size={20} />
+              </span>
+              <div className="min-w-0 leading-tight">
+                <p className="truncate text-base font-semibold tracking-tight text-slate-950">
+                  Darient Workspace Reservations
+                </p>
+                <p className="text-xs font-medium text-slate-500">
+                  Operations console
+                </p>
+              </div>
             </NavLink>
-          ))}
-        </nav>
 
-        <div className="flex-1" />
+            <nav
+              aria-label="Primary"
+              className="-mx-1 flex min-w-0 gap-1 overflow-x-auto pb-1 text-sm hide-scrollbar md:mx-0 md:pb-0"
+            >
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    cn(
+                      "relative flex min-h-11 flex-shrink-0 items-center gap-2 rounded-2xl px-4 font-semibold transition duration-200 lg:min-h-[4.75rem] lg:rounded-none lg:px-5",
+                      isActive
+                        ? "bg-brand-50 text-brand-700 lg:bg-transparent"
+                        : "text-slate-500 hover:bg-slate-100/80 hover:text-slate-950 lg:hover:bg-transparent"
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span
+                        className={cn(
+                          "transition",
+                          isActive ? "text-brand-600" : "text-slate-500"
+                        )}
+                      >
+                        {item.icon}
+                      </span>
+                      {item.label}
+                      {isActive ? (
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-x-4 -bottom-px hidden h-1 rounded-t-full bg-gradient-to-r from-brand-500 to-brand-700 lg:block"
+                        />
+                      ) : null}
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
 
-        <div className="flex items-center gap-2 pl-4">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            Live
-          </span>
+          <div className="lg:ml-auto">
+            <IotConnectionBadge status={iotStatus} />
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
-      <Outlet />
-    </main>
-  </div>
-);
+      <main className="app-container py-8 sm:py-10 lg:py-12">
+        <Outlet />
+      </main>
+    </div>
+  );
+};
+
+const IotConnectionBadge = ({
+  status
+}: {
+  status: ReturnType<typeof useEventStream>;
+}) => {
+  const isConnected = status === "open";
+  const isConnecting = status === "connecting" || status === "idle";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex min-h-10 items-center gap-2 rounded-full border px-3.5 text-xs font-bold uppercase tracking-[0.14em]",
+        isConnected
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : isConnecting
+            ? "border-amber-200 bg-amber-50 text-amber-700"
+            : "border-rose-200 bg-rose-50 text-rose-700"
+      )}
+      title={`IoT stream status: ${status}`}
+    >
+      <span
+        className={cn(
+          "h-2 w-2 rounded-full",
+          isConnected
+            ? "animate-pulse bg-emerald-500"
+            : isConnecting
+              ? "animate-pulse bg-amber-500"
+              : "bg-rose-500"
+        )}
+      />
+      {isConnected ? "IoT connected" : isConnecting ? "IoT connecting" : "IoT offline"}
+    </span>
+  );
+};

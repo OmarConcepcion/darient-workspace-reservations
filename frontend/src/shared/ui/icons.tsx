@@ -155,3 +155,47 @@ export const CheckIcon = (props: IconProps) => (
     <path d="M20 6 9 17l-5-5" />
   </svg>
 );
+
+export const ClockIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </svg>
+);
+
+export const MailIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <rect width="18" height="14" x="3" y="5" rx="2" />
+    <path d="m3 7 9 6 9-6" />
+  </svg>
+);
+
+export const ShieldIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+);
+
+export const ThermometerIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <path d="M14 14.76V5a2 2 0 1 0-4 0v9.76a4 4 0 1 0 4 0Z" />
+  </svg>
+);
+
+export const BarChartIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <path d="M3 3v18h18" />
+    <path d="M7 16v-4" />
+    <path d="M12 16V8" />
+    <path d="M17 16v-7" />
+  </svg>
+);
+
+export const LayersIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <path d="m12 2 9 5-9 5-9-5 9-5Z" />
+    <path d="m3 12 9 5 9-5" />
+    <path d="m3 17 9 5 9-5" />
+  </svg>
+);

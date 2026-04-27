@@ -36,12 +36,14 @@ describe("connectEventStream", () => {
     const telemetry = vi.fn();
     const alert = vi.fn();
     const reported = vi.fn();
+    const onOpen = vi.fn();
     const controller = new AbortController();
 
     await connectEventStream({
       baseUrl: TEST_API_BASE_URL,
       apiKey: "test",
       signal: controller.signal,
+      onOpen,
       handlers: {
         telemetry_updated: telemetry,
         alert_updated: alert,
@@ -49,6 +51,7 @@ describe("connectEventStream", () => {
       }
     });
 
+    expect(onOpen).toHaveBeenCalledOnce();
     expect(telemetry).toHaveBeenCalledWith(
       expect.objectContaining({ space_id: "s1", avg_co2_ppm: 900 })
     );

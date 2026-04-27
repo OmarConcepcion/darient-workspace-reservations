@@ -188,7 +188,7 @@ describe("NewReservationView", () => {
     );
   });
 
-  it("surfaces backend errors as toast notifications", async () => {
+  it("surfaces backend errors as toast notifications and inline feedback", async () => {
     server.use(
       http.post(`${TEST_API_BASE_URL}/reservations`, () =>
         HttpResponse.json(
@@ -228,6 +228,9 @@ describe("NewReservationView", () => {
 
     await waitFor(() =>
       expect(toastError).toHaveBeenCalledWith("Time window already booked.")
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Time window already booked."
     );
     expect(toastSuccess).not.toHaveBeenCalled();
     expect(screen.queryByTestId("list-page")).not.toBeInTheDocument();

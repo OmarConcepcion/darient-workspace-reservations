@@ -59,6 +59,11 @@ export const useEventStream = (
             baseUrl: env("VITE_API_URL"),
             apiKey: env("VITE_API_KEY"),
             signal: controller.signal,
+            onOpen: () => {
+              if (!cancelled) {
+                setStatus("open");
+              }
+            },
             handlers: proxyHandlers
           });
           if (cancelled) {

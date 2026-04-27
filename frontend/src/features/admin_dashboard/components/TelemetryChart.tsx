@@ -33,8 +33,8 @@ const formatTimeTick = (iso: string): string => {
 
 export const TelemetryChart = ({ points, isLive }: TelemetryChartProps) => (
   <Card>
-    <div className="space-y-3 p-6">
-      <header className="flex items-center justify-between">
+    <div className="space-y-5 p-5 sm:p-6">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-sm font-semibold text-slate-900">
             Live telemetry
@@ -64,7 +64,7 @@ export const TelemetryChart = ({ points, isLive }: TelemetryChartProps) => (
           Waiting for telemetry…
         </div>
       ) : (
-        <div className="h-64 w-full">
+        <div className="h-72 w-full min-w-0">
           <ResponsiveContainer>
             <LineChart
               data={points}
