@@ -8,6 +8,7 @@ import { errorHandler } from "../shared/http/error-handler.js";
 import { notFoundHandler } from "../shared/http/not-found-handler.js";
 import { logger } from "../shared/logger/logger.js";
 import { openApiSpec } from "../shared/openapi/openapi.js";
+import { createIotAdminRouter } from "../modules/iot/presentation/iot-routes.js";
 import { createPlaceRouter } from "../modules/places/presentation/place-routes.js";
 import { createReservationRouter } from "../modules/reservations/presentation/reservation-routes.js";
 import { createSpaceRouter } from "../modules/spaces/presentation/space-routes.js";
@@ -46,6 +47,15 @@ export const createApp = (
     createReservationRouter(
       dependencies.reservationRepository,
       dependencies.spaceRepository
+    )
+  );
+  apiRouter.use(
+    "/admin",
+    createIotAdminRouter(
+      dependencies.iotRepository,
+      dependencies.mqttPublisher,
+      dependencies.ssePublisher,
+      dependencies.nowProvider
     )
   );
   apiRouter.use(notFoundHandler);

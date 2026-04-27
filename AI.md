@@ -19,6 +19,7 @@ La AI ayudó a:
 - Implementar la fase foundation + core backend.
 - Generar pruebas automatizadas de backend y frontend foundation.
 - Crear configuración Docker y scripts de setup.
+- Implementar el primer bloque backend de IoT y SSE.
 
 ## Decisiones tomadas con apoyo de AI
 
@@ -80,3 +81,4 @@ Este documento debe actualizarse si la AI se usa para generar código, tests o d
 | Frontend foundation | Vite, React Router, Axios, TanStack Query, Tailwind, Sonner y MSW |
 | Docker | Compose raíz con backend, frontend, Postgres, MQTT y simulador black box |
 | Tests | Vitest/Supertest backend y Vitest/RTL frontend |
+| Backend IoT | Procesamiento MQTT, endpoints admin IoT y stream SSE |

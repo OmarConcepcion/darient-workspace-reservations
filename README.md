@@ -6,7 +6,7 @@ El proyecto se trabajará con **Spec-Driven Development (SDD) with AI**: primero
 
 ## Estado actual
 
-Foundation + core backend implementado:
+Foundation + backend IoT base implementado:
 
 - Backend Express/TypeScript en `/api/v1`.
 - Health endpoint, Swagger, API key middleware, Pino logging y error handler estándar.
@@ -14,6 +14,8 @@ Foundation + core backend implementado:
 - Seed inicial para `SITE_A`, `OFFICE_1` y `OFFICE_2`.
 - CRUD core de places, spaces y reservations.
 - Reglas de reservas: conflicto de horario, máximo 3 activas por cliente por semana, cancelación y expiración dinámica.
+- Procesamiento backend de tópicos `telemetry` y `reported`.
+- Endpoints admin IoT, publicación de `desired` por MQTT y stream SSE.
 - Frontend Vite/React inicial con Router, Axios, TanStack Query, Tailwind, Sonner y MSW.
 - Docker Compose raíz con backend, frontend, PostgreSQL, MQTT y simulador IoT como caja negra.
 

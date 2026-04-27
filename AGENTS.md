@@ -22,6 +22,7 @@ Este proyecto sigue **Spec-Driven Development (SDD) with AI**. Antes de implemen
 - No crear fases infinitas; máximo 5 fases generales.
 - No cambiar una decisión cerrada sin documentarlo.
 - No agregar librerías nuevas sin justificación.
+- Mantener trazabilidad con commits pequeños y descriptivos: un commit por subtarea o bloque funcional acordado.
 
 ## Reglas del iot-simulator
 
