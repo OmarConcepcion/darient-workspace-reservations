@@ -1,10 +1,12 @@
 import { Link, Outlet, type RouteObject } from "react-router-dom";
 
+import {
+  NewReservationView,
+  ReservationsListView
+} from "../features/reservations";
 import { SpaceDetailView, SpacesListView } from "../features/spaces";
 import { AdminPage } from "./pages/AdminPage";
 import { HomePage } from "./pages/HomePage";
-import { NewReservationPage } from "./pages/NewReservationPage";
-import { ReservationsPage } from "./pages/ReservationsPage";
 
 const RootLayout = () => (
   <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -34,8 +36,8 @@ export const appRoutes: RouteObject[] = [
       { index: true, element: <HomePage /> },
       { path: "spaces", element: <SpacesListView /> },
       { path: "spaces/:space_id", element: <SpaceDetailView /> },
-      { path: "reservations", element: <ReservationsPage /> },
-      { path: "reservations/new", element: <NewReservationPage /> },
+      { path: "reservations", element: <ReservationsListView /> },
+      { path: "reservations/new", element: <NewReservationView /> },
       { path: "admin", element: <AdminPage /> },
       { path: "admin/spaces/:space_id", element: <AdminPage /> }
     ]
