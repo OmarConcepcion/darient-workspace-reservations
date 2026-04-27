@@ -1,23 +1,35 @@
-import mqtt from "mqtt";
-
-import { getEnv } from "../../../config/env.js";
 import { logger } from "../../../shared/logger/logger.js";
 import { AppError } from "../../../shared/errors/app-error.js";
 import type { IotService } from "../application/iot-service.js";
 import { parseIotTopic } from "../application/topic-parser.js";
+import { SharedMqttClient } from "./shared-mqtt-client.js";
 
 export class MqttRuntime {
-  private client = mqtt.connect(getEnv().MQTT_URL);
+  private started = false;
 
-  public constructor(private readonly iotService: IotService) {}
+  public constructor(
+    private readonly client: SharedMqttClient,
+    private readonly iotService: IotService
+  ) {}
 
-  public start(): void {
-    this.client.on("connect", () => {
-      this.client.subscribe("sites/+/offices/+/telemetry");
-      this.client.subscribe("sites/+/offices/+/reported");
-      logger.info("mqtt runtime subscribed to telemetry and reported topics");
+  public async start(): Promise<void> {
+    if (this.started) {
+      return;
+    }
+
+    this.started = true;
+    this.client.on("reconnect", () => {
+      logger.warn("mqtt runtime reconnecting");
     });
-
+    this.client.on("offline", () => {
+      logger.warn("mqtt runtime offline");
+    });
+    this.client.on("close", () => {
+      logger.warn("mqtt runtime connection closed");
+    });
+    this.client.on("error", (error: Error) => {
+      logger.error({ error: error.message }, "mqtt runtime error");
+    });
     this.client.on("message", async (topic, payload) => {
       try {
         const parsed = parseIotTopic(topic);
@@ -39,8 +51,20 @@ export class MqttRuntime {
       }
     });
 
-    this.client.on("error", (error) => {
-      logger.error({ error: error.message }, "mqtt runtime error");
-    });
+    await this.client.connect();
+    logger.info("mqtt runtime connected");
+    await this.client.subscribe("sites/+/offices/+/telemetry");
+    await this.client.subscribe("sites/+/offices/+/reported");
+    logger.info("mqtt runtime subscribed to telemetry and reported topics");
+  }
+
+  public async stop(): Promise<void> {
+    if (!this.started) {
+      return;
+    }
+
+    this.started = false;
+    await this.client.disconnect();
+    logger.info("mqtt runtime stopped");
   }
 }

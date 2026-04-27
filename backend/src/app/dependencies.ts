@@ -1,5 +1,6 @@
 import { PrismaIotRepository } from "../modules/iot/infrastructure/prisma-iot-repository.js";
 import { MqttJsPublisher } from "../modules/iot/infrastructure/mqtt-js-publisher.js";
+import { SharedMqttClient } from "../modules/iot/infrastructure/shared-mqtt-client.js";
 import type { IotRepository } from "../modules/iot/ports/iot-repository.js";
 import type { MqttPublisher } from "../modules/iot/ports/mqtt-publisher.js";
 import { PrismaPlaceRepository } from "../modules/places/infrastructure/prisma-place-repository.js";
@@ -15,17 +16,23 @@ export type AppDependencies = {
   spaceRepository: SpaceRepository;
   reservationRepository: ReservationRepository;
   iotRepository: IotRepository;
+  mqttClient: SharedMqttClient;
   mqttPublisher: MqttPublisher;
   ssePublisher: InMemorySsePublisher;
   nowProvider: () => Date;
 };
 
-export const createDefaultDependencies = (): AppDependencies => ({
-  placeRepository: new PrismaPlaceRepository(),
-  spaceRepository: new PrismaSpaceRepository(),
-  reservationRepository: new PrismaReservationRepository(),
-  iotRepository: new PrismaIotRepository(),
-  mqttPublisher: new MqttJsPublisher(),
-  ssePublisher: new InMemorySsePublisher(),
-  nowProvider: () => new Date()
-});
+export const createDefaultDependencies = (): AppDependencies => {
+  const mqttClient = new SharedMqttClient();
+
+  return {
+    placeRepository: new PrismaPlaceRepository(),
+    spaceRepository: new PrismaSpaceRepository(),
+    reservationRepository: new PrismaReservationRepository(),
+    iotRepository: new PrismaIotRepository(),
+    mqttClient,
+    mqttPublisher: new MqttJsPublisher(mqttClient),
+    ssePublisher: new InMemorySsePublisher(),
+    nowProvider: () => new Date()
+  };
+};
