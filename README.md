@@ -6,9 +6,11 @@ El proyecto se trabajará con **Spec-Driven Development (SDD) with AI**: primero
 
 ## Estado actual
 
-Foundation + backend IoT hardening implementado:
+Backend + frontend completos para reservas y monitoreo IoT en tiempo real:
 
-- Backend Express/TypeScript en `/api/v1`.
+### Backend
+
+- Express/TypeScript en `/api/v1`.
 - Health endpoint, Swagger, API key middleware, Pino logging y error handler estándar.
 - Prisma multi-schema con `core`, `iot` y `audit`.
 - Seed inicial para `SITE_A`, `OFFICE_1` y `OFFICE_2`.
@@ -18,7 +20,20 @@ Foundation + backend IoT hardening implementado:
 - Endpoints admin IoT, publicación de `desired` por MQTT, stream SSE y manejo explícito de error `502` si falla el publish.
 - Runtime MQTT compartido con startup/shutdown ordenado y logs operativos.
 - Suite real de integración backend IoT contra API + MQTT + PostgreSQL.
-- Frontend Vite/React inicial con Router, Axios, TanStack Query, Tailwind, Sonner y MSW.
+
+### Frontend
+
+- Vite/React 19 con React Router, Axios, TanStack Query, Tailwind v4, Sonner y MSW.
+- Sistema visual indigo con primitivos compartidos en `src/shared/ui` (Button, Card, Badge, EmptyState, ErrorState, PageHeader, Skeleton, iconos inline).
+- Spaces: lista y detalle con loading/empty/error, animaciones con Motion.
+- Reservations: lista paginada con cancel, formulario RHF + Zod con selectores cascading place → space y conversión datetime-local → ISO UTC.
+- Admin dashboard: monitoring snapshot, stat cards, Recharts live chart, panel desired vs reported, RHF form de control de dispositivo, alerts table.
+- SSE consumido vía `fetch` + `ReadableStream` (para enviar `x-api-key`) con reconexión exponencial y refresh inteligente de queries.
+- Code splitting por ruta (`React.lazy`) — admin/reservations son chunks independientes.
+- 25 tests con Vitest + RTL + MSW cubriendo happy paths, validación de formularios, errores normalizados y parsing SSE.
+
+### Infraestructura
+
 - Docker Compose raíz con backend, frontend, PostgreSQL, MQTT y simulador IoT como caja negra.
 
 ## Stack aprobado
