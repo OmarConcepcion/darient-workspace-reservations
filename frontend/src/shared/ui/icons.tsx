@@ -123,3 +123,35 @@ export const CpuIcon = (props: IconProps) => (
     <path d="M9 20v2" />
   </svg>
 );
+
+export const SearchIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <circle cx="11" cy="11" r="8" />
+    <path d="m21 21-4.3-4.3" />
+  </svg>
+);
+
+export const XIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
+);
+
+export const ZapIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+  </svg>
+);
+
+export const ChevronDownIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
+export const CheckIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <path d="M20 6 9 17l-5-5" />
+  </svg>
+);

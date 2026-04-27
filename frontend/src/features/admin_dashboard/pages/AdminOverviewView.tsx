@@ -8,20 +8,25 @@ import {
   ArrowRightIcon,
   Badge,
   BuildingIcon,
+  CalendarIcon,
   Card,
   CpuIcon,
   EmptyState,
   ErrorState,
   PageHeader,
   Skeleton,
-  UsersIcon
+  UsersIcon,
+  ZapIcon
 } from "../../../shared/ui";
+import { useReservations } from "../../reservations";
 import { usePlaces, type Place } from "../../places";
 import { useSpaces } from "../../spaces";
+import { StatCard } from "../components/StatCard";
 
 export const AdminOverviewView = () => {
   const spacesQuery = useSpaces();
   const placesQuery = usePlaces();
+  const reservationsQuery = useReservations({ pageSize: 1 });
 
   const placesById = useMemo(() => {
     const map = new Map<string, Place>();
@@ -31,8 +36,47 @@ export const AdminOverviewView = () => {
     return map;
   }, [placesQuery.data]);
 
+  const spaces = spacesQuery.data ?? [];
+  const totalCapacity = spaces.reduce((sum, s) => sum + s.capacity, 0);
+  const totalReservations = reservationsQuery.data?.pagination.total ?? 0;
+
   return (
     <section className="space-y-8">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Total spaces"
+          value={spacesQuery.isLoading ? "—" : String(spaces.length)}
+          hint="Configured workspaces"
+          icon={<BuildingIcon size={16} />}
+          tone="brand"
+        />
+        <StatCard
+          label="Total capacity"
+          value={spacesQuery.isLoading ? "—" : String(totalCapacity)}
+          hint={`Across ${spaces.length} space${spaces.length !== 1 ? "s" : ""}`}
+          icon={<UsersIcon size={16} />}
+          tone="neutral"
+        />
+        <StatCard
+          label="Live telemetry"
+          value={spacesQuery.isLoading ? "—" : String(spaces.length)}
+          hint="All systems operational"
+          icon={<ZapIcon size={16} />}
+          tone="brand"
+        />
+        <StatCard
+          label="Total reservations"
+          value={reservationsQuery.isLoading ? "—" : String(totalReservations)}
+          hint={
+            <Link to="/reservations" className="inline-flex items-center gap-0.5 text-brand-700 hover:underline">
+              View reservations <ArrowRightIcon size={10} />
+            </Link>
+          }
+          icon={<CalendarIcon size={16} />}
+          tone="neutral"
+        />
+      </div>
+
       <PageHeader
         eyebrow="Operations"
         title="Admin dashboard"

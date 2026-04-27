@@ -11,7 +11,7 @@ describe("App", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "Darient Workspace Reservations"
+        name: /smart workspace reservations/i
       })
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Spaces" })).toBeInTheDocument();

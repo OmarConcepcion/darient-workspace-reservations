@@ -17,12 +17,17 @@ export {
   ArrowRightIcon,
   BuildingIcon,
   CalendarIcon,
+  CheckIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   CpuIcon,
   InboxIcon,
   MapPinIcon,
   PlusIcon,
   RefreshIcon,
+  SearchIcon,
   SparklesIcon,
-  UsersIcon
+  UsersIcon,
+  XIcon,
+  ZapIcon
 } from "./icons";

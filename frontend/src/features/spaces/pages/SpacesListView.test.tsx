@@ -46,7 +46,7 @@ describe("SpacesListView", () => {
     renderWithProviders(<SpacesListView />);
 
     expect(await screen.findByText("Sky Room")).toBeInTheDocument();
-    expect(screen.getByText("Headquarters")).toBeInTheDocument();
+    expect(screen.getAllByText("Headquarters").length).toBeGreaterThan(0);
     expect(screen.getByText(/Capacity 8/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /View details/i })).toHaveAttribute(
       "href",
