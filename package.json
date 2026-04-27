@@ -1,0 +1,23 @@
+{
+  "name": "darient-workspace-reservations",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup:env": "node scripts/setup-env.mjs",
+    "backend:dev": "npm --prefix backend run dev",
+    "backend:build": "npm --prefix backend run build",
+    "backend:test": "npm --prefix backend test",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "frontend:test": "npm --prefix frontend test",
+    "build": "npm run backend:build && npm run frontend:build",
+    "test": "npm run backend:test && npm run frontend:test",
+    "prisma:generate": "npm --prefix backend run prisma:generate",
+    "prisma:migrate": "npm --prefix backend run prisma:migrate",
+    "prisma:deploy": "npm --prefix backend run prisma:deploy",
+    "prisma:seed": "npm --prefix backend run prisma:seed",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down"
+  }
+}
