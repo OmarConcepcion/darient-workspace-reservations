@@ -223,4 +223,32 @@ describe("iot admin routes", () => {
     expect(streamResponse.status).toBe(200);
     expect(streamResponse.headers["content-type"]).toContain("text/event-stream");
   });
+
+  it("returns 502 when device desired publish fails", async () => {
+    const { ssePublisher, dependencies } = createDependencies();
+    const app = createApp({
+      ...dependencies,
+      mqttPublisher: {
+        publishJson: async () => {
+          throw new Error("broker unavailable");
+        }
+      },
+      ssePublisher
+    });
+
+    const response = await request(app)
+      .patch(`/api/v1/admin/spaces/${spaceId}/device_desired`)
+      .set(apiKey)
+      .send({
+        sampling_interval_sec: 5,
+        co2_alert_threshold: 900
+      });
+
+    expect(response.status).toBe(502);
+    expect(response.body).toMatchObject({
+      error: {
+        code: "MQTT_PUBLISH_FAILED"
+      }
+    });
+  });
 });

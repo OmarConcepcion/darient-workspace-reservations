@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
+import { AppError } from "../../../shared/errors/app-error.js";
 import { IotService } from "./iot-service.js";
 import type {
   AlertRecord,
@@ -35,24 +36,47 @@ const context: SpaceTelemetryContext = {
   ]
 };
 
-const createRepository = () => {
+const createTelemetryPayload = (overrides: Partial<Record<string, unknown>> = {}) =>
+  JSON.stringify({
+    ts: "2026-04-27T15:10:00.000Z",
+    temp_c: 24.1,
+    humidity_pct: 49.3,
+    co2_ppm: 900,
+    occupancy: 3,
+    power_w: 120,
+    ...overrides
+  });
+
+const telemetryTopic = "sites/SITE_A/offices/OFFICE_1/telemetry";
+const reportedTopic = "sites/SITE_A/offices/OFFICE_1/reported";
+
+const createRepository = (options?: {
+  hasActiveReservationAt?: (at: Date) => boolean;
+  desiredOverrides?: Partial<DeviceDesiredRecord>;
+  contextOverrides?: Partial<SpaceTelemetryContext>;
+}) => {
+  const repositoryContext: SpaceTelemetryContext = {
+    ...context,
+    ...options?.contextOverrides
+  };
   const rawTelemetry = new Map<string, RawTelemetryRecord>();
   const telemetrySamples: TelemetrySample[] = [];
   const aggregations = new Map<string, TelemetryAggregationRecord>();
   const alerts = new Map<string, AlertRecord>();
   const desiredBySpaceId = new Map<string, DeviceDesiredRecord>([
     [
-      context.spaceId,
+      repositoryContext.spaceId,
       {
         id: randomUUID(),
-        spaceId: context.spaceId,
+        spaceId: repositoryContext.spaceId,
         samplingIntervalSec: 10,
         co2AlertThreshold: 1000,
         publishStatus: "PENDING",
         lastPublishedAt: null,
         publishError: null,
         createdAt: fixedNow,
-        updatedAt: fixedNow
+        updatedAt: fixedNow,
+        ...options?.desiredOverrides
       }
     ]
   ]);
@@ -90,8 +114,8 @@ const createRepository = () => {
       });
     },
     findSpaceContextByIotIds: async (siteId, officeId) =>
-      siteId === context.iotSiteId && officeId === context.iotOfficeId
-        ? context
+      siteId === repositoryContext.iotSiteId && officeId === repositoryContext.iotOfficeId
+        ? repositoryContext
         : null,
     upsertTelemetryAggregation: async (input) => {
       const key = `${input.spaceId}:${input.windowStart.toISOString()}`;
@@ -159,7 +183,8 @@ const createRepository = () => {
     },
     listAlertsBySpaceId: async (spaceId) =>
       [...alerts.values()].filter((alert) => alert.spaceId === spaceId),
-    hasActiveReservationAt: async () => false,
+    hasActiveReservationAt: async (_spaceId, at) =>
+      options?.hasActiveReservationAt?.(at) ?? false,
     getMonitoringSnapshot: async (spaceId) => {
       const latestAggregation = [...aggregations.values()]
         .filter((aggregation) => aggregation.spaceId === spaceId)
@@ -167,7 +192,7 @@ const createRepository = () => {
         null;
 
       return {
-        space: context,
+        space: repositoryContext,
         latestAggregation,
         deviceDesired: desiredBySpaceId.get(spaceId) ?? null,
         deviceReported: reportedBySpaceId.get(spaceId) ?? null,
@@ -177,11 +202,12 @@ const createRepository = () => {
       } satisfies MonitoringSnapshot;
     },
     findSpaceContextBySpaceId: async (spaceId) =>
-      spaceId === context.spaceId ? context : null
+      spaceId === repositoryContext.spaceId ? repositoryContext : null
   };
 
   return {
     repository,
+    repositoryContext,
     rawTelemetry,
     telemetrySamples,
     aggregations,
@@ -211,15 +237,8 @@ describe("IotService", () => {
     );
 
     await service.processTelemetryMessage(
-      "sites/SITE_A/offices/OFFICE_1/telemetry",
-      JSON.stringify({
-        ts: "2026-04-27T15:10:00.000Z",
-        temp_c: 24.1,
-        humidity_pct: 49.3,
-        co2_ppm: 1100,
-        occupancy: 5,
-        power_w: 120
-      })
+      telemetryTopic,
+      createTelemetryPayload({ co2_ppm: 1100, occupancy: 5 })
     );
 
     expect(state.rawTelemetry.size).toBe(1);
@@ -251,7 +270,7 @@ describe("IotService", () => {
     );
 
     await service.processReportedMessage(
-      "sites/SITE_A/offices/OFFICE_1/reported",
+      reportedTopic,
       JSON.stringify({
         ts: "2026-04-27T15:10:00.000Z",
         samplingIntervalSec: 5,
@@ -308,6 +327,181 @@ describe("IotService", () => {
       }
     });
     expect(monitoring.deviceDesired?.samplingIntervalSec).toBe(5);
-    expect(sseEvents.at(-1)?.event).toBe("device_desired_updated");
+    expect(sseEvents).toHaveLength(0);
+  });
+
+  it("marks desired as failed and throws transport error when mqtt publish fails", async () => {
+    const state = createRepository();
+    const mqttPublisher: MqttPublisher = {
+      publishJson: async () => {
+        throw new Error("broker unavailable");
+      }
+    };
+    const ssePublisher: SsePublisher = {
+      publish: () => undefined
+    };
+    const service = new IotService(
+      state.repository,
+      mqttPublisher,
+      ssePublisher,
+      () => fixedNow
+    );
+
+    await expect(
+      service.updateDeviceDesired(context.spaceId, {
+        samplingIntervalSec: 5,
+        co2AlertThreshold: 900
+      })
+    ).rejects.toMatchObject({
+      statusCode: 502,
+      code: "MQTT_PUBLISH_FAILED"
+    } satisfies Partial<AppError>);
+
+    expect(state.desiredBySpaceId.get(context.spaceId)).toMatchObject({
+      samplingIntervalSec: 5,
+      co2AlertThreshold: 900,
+      publishStatus: "FAILED",
+      publishError: "broker unavailable"
+    });
+  });
+
+  it("opens and resolves CO2 alert using the documented sustained windows", async () => {
+    const state = createRepository();
+    const service = new IotService(
+      state.repository,
+      { publishJson: async () => undefined },
+      { publish: () => undefined },
+      () => fixedNow
+    );
+
+    const openOffsets = [0, 60, 120, 180, 300];
+    for (const offset of openOffsets) {
+      await service.processTelemetryMessage(
+        telemetryTopic,
+        createTelemetryPayload({
+          ts: new Date(Date.UTC(2026, 3, 27, 15, 0, offset)).toISOString(),
+          co2_ppm: 1101
+        })
+      );
+    }
+
+    const openAlert = [...state.alerts.values()][0];
+    expect(openAlert).toMatchObject({
+      type: "CO2",
+      status: "OPEN"
+    });
+    expect(openAlert?.metadata).toMatchObject({
+      threshold: 1000,
+      latest_co2_ppm: 1101
+    });
+
+    const resolveOffsets = [360, 480];
+    for (const offset of resolveOffsets) {
+      await service.processTelemetryMessage(
+        telemetryTopic,
+        createTelemetryPayload({
+          ts: new Date(Date.UTC(2026, 3, 27, 15, 0, offset)).toISOString(),
+          co2_ppm: 950
+        })
+      );
+    }
+
+    expect([...state.alerts.values()][0]).toMatchObject({
+      type: "CO2",
+      status: "RESOLVED"
+    });
+  });
+
+  it("opens unexpected occupancy alert within office hours when there is no active reservation", async () => {
+    const state = createRepository();
+    const service = new IotService(
+      state.repository,
+      { publishJson: async () => undefined },
+      { publish: () => undefined },
+      () => fixedNow
+    );
+
+    const timestamps = [
+      "2026-04-27T15:00:00.000Z",
+      "2026-04-27T15:05:00.000Z",
+      "2026-04-27T15:10:00.000Z"
+    ];
+
+    for (const ts of timestamps) {
+      await service.processTelemetryMessage(
+        telemetryTopic,
+        createTelemetryPayload({ ts, occupancy: 2 })
+      );
+    }
+
+    expect([...state.alerts.values()][0]).toMatchObject({
+      type: "OCCUPANCY_UNEXPECTED",
+      status: "OPEN"
+    });
+  });
+
+  it("does not open unexpected occupancy alert within office hours when there is an active reservation", async () => {
+    const state = createRepository({
+      hasActiveReservationAt: () => true
+    });
+    const service = new IotService(
+      state.repository,
+      { publishJson: async () => undefined },
+      { publish: () => undefined },
+      () => fixedNow
+    );
+
+    const timestamps = [
+      "2026-04-27T15:00:00.000Z",
+      "2026-04-27T15:05:00.000Z",
+      "2026-04-27T15:10:00.000Z"
+    ];
+
+    for (const ts of timestamps) {
+      await service.processTelemetryMessage(
+        telemetryTopic,
+        createTelemetryPayload({ ts, occupancy: 2 })
+      );
+    }
+
+    expect(state.alerts.size).toBe(0);
+  });
+
+  it("uses the configured timezone instead of a hardcoded offset for office hours", async () => {
+    const state = createRepository({
+      hasActiveReservationAt: () => true,
+      contextOverrides: {
+        timezone: "UTC",
+        officeHours: [
+          {
+            dayOfWeek: 1,
+            opensAt: "15:00",
+            closesAt: "18:00",
+            isEnabled: true
+          }
+        ]
+      }
+    });
+    const service = new IotService(
+      state.repository,
+      { publishJson: async () => undefined },
+      { publish: () => undefined },
+      () => fixedNow
+    );
+
+    const timestamps = [
+      "2026-04-27T15:00:00.000Z",
+      "2026-04-27T15:05:00.000Z",
+      "2026-04-27T15:10:00.000Z"
+    ];
+
+    for (const ts of timestamps) {
+      await service.processTelemetryMessage(
+        telemetryTopic,
+        createTelemetryPayload({ ts, occupancy: 2 })
+      );
+    }
+
+    expect(state.alerts.size).toBe(0);
   });
 });

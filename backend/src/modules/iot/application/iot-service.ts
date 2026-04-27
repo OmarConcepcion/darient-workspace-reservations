@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { AppError } from "../../../shared/errors/app-error.js";
+import { logger } from "../../../shared/logger/logger.js";
 import type {
   AlertRecord,
   AlertType,
@@ -45,6 +46,16 @@ const minuteWindow = (date: Date) => {
 };
 
 const toMinutes = (minutes: number) => minutes * 60 * 1000;
+
+const weekdayToNumber: Record<string, number> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6
+};
 
 export class IotService {
   public constructor(
@@ -162,18 +173,9 @@ export class IotService {
         lastPublishedAt: this.nowProvider(),
         publishError: null
       });
-
-      this.ssePublisher.publish("device_desired_updated", {
-        space_id: spaceId,
-        sampling_interval_sec: desired.samplingIntervalSec,
-        co2_alert_threshold: desired.co2AlertThreshold,
-        publish_status: desired.publishStatus,
-        last_published_at: desired.lastPublishedAt?.toISOString() ?? null
-      });
-
       return desired;
     } catch (error) {
-      return this.iotRepository.upsertDeviceDesired({
+      await this.iotRepository.upsertDeviceDesired({
         spaceId,
         samplingIntervalSec: parsedInput.samplingIntervalSec,
         co2AlertThreshold: parsedInput.co2AlertThreshold,
@@ -182,6 +184,27 @@ export class IotService {
         publishError:
           error instanceof Error ? error.message : "Failed to publish desired state."
       });
+
+      logger.error(
+        {
+          topic,
+          spaceId,
+          iotSiteId: context.iotSiteId,
+          iotOfficeId: context.iotOfficeId,
+          error: error instanceof Error ? error.message : "Failed to publish desired state."
+        },
+        "failed to publish desired device state"
+      );
+
+      throw new AppError(
+        502,
+        "MQTT_PUBLISH_FAILED",
+        "Failed to publish desired device state.",
+        {
+          topic,
+          space_id: spaceId
+        }
+      );
     }
   }
 
@@ -410,7 +433,11 @@ export class IotService {
       return false;
     }
 
-    const withinOfficeHours = this.isWithinOfficeHours(context.officeHours, sample.timestamp);
+    const withinOfficeHours = this.isWithinOfficeHours(
+      context.officeHours,
+      sample.timestamp,
+      context.timezone
+    );
 
     if (!withinOfficeHours) {
       return true;
@@ -424,18 +451,34 @@ export class IotService {
     return !hasActiveReservation;
   }
 
-  private isWithinOfficeHours(officeHours: SpaceTelemetryContext["officeHours"], at: Date): boolean {
-    const panamaTime = new Date(at.getTime() - 5 * 60 * 60 * 1000);
-    const dayOfWeek = panamaTime.getUTCDay();
+  private isWithinOfficeHours(
+    officeHours: SpaceTelemetryContext["officeHours"],
+    at: Date,
+    timezone: string
+  ): boolean {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    }).formatToParts(at);
+    const weekday = parts.find((part) => part.type === "weekday")?.value;
+    const hour = parts.find((part) => part.type === "hour")?.value;
+    const minute = parts.find((part) => part.type === "minute")?.value;
+
+    if (!weekday || !hour || !minute) {
+      throw new AppError(500, "INVALID_TIMEZONE_FORMAT", "Failed to evaluate office hours.");
+    }
+
+    const dayOfWeek = weekdayToNumber[weekday];
     const rule = officeHours.find((item) => item.dayOfWeek === dayOfWeek && item.isEnabled);
 
     if (!rule) {
       return false;
     }
 
-    const currentTime = `${String(panamaTime.getUTCHours()).padStart(2, "0")}:${String(
-      panamaTime.getUTCMinutes()
-    ).padStart(2, "0")}`;
+    const currentTime = `${hour}:${minute}`;
 
     return currentTime >= rule.opensAt && currentTime <= rule.closesAt;
   }
