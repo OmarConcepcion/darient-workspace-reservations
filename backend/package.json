@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "test": "vitest run",
+    "test:iot:real": "vitest run --config vitest.real.config.ts",
     "test:watch": "vitest",
     "setup:env": "node scripts/setup-env.mjs",
     "prisma:generate": "prisma generate",
