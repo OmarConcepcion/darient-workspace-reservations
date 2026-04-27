@@ -1,0 +1,103 @@
+services:
+  darient_postgres:
+    image: postgres:16-alpine
+    container_name: darient_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: darient
+      POSTGRES_USER: darient
+      POSTGRES_PASSWORD: darient
+    ports:
+      - "5432:5432"
+    volumes:
+      - darient_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U darient -d darient"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - darient_network
+
+  darient_mqtt:
+    image: eclipse-mosquitto:2
+    container_name: darient_mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - darient_mqtt_data:/mosquitto/data
+      - darient_mqtt_log:/mosquitto/log
+    networks:
+      - darient_network
+
+  darient_backend:
+    build:
+      context: ./backend
+    container_name: darient_backend
+    restart: unless-stopped
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run prisma:seed && npm run dev"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      API_KEY: darient_dev_key
+      DATABASE_URL: postgresql://darient:darient@darient_postgres:5432/darient?schema=core
+      MQTT_URL: mqtt://darient_mqtt:1883
+      LOG_LEVEL: info
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - "3000:3000"
+    depends_on:
+      darient_postgres:
+        condition: service_healthy
+      darient_mqtt:
+        condition: service_started
+    networks:
+      - darient_network
+
+  darient_frontend:
+    build:
+      context: ./frontend
+    container_name: darient_frontend
+    restart: unless-stopped
+    command: npm run dev
+    environment:
+      VITE_API_URL: http://localhost:3000/api/v1
+      VITE_API_KEY: darient_dev_key
+    ports:
+      - "5173:5173"
+    depends_on:
+      - darient_backend
+    networks:
+      - darient_network
+
+  darient_iot_simulator:
+    build:
+      context: ./external/iot-simulator
+      dockerfile: ../../docker/iot-simulator/Dockerfile
+    container_name: darient_iot_simulator
+    restart: unless-stopped
+    command: ["node", "index.js", "--site-id", "SITE_A", "--office-id", "OFFICE_1"]
+    environment:
+      MQTT_URL: mqtt://darient_mqtt:1883
+      BASE_TEMP_C: 23
+      BASE_HUMIDITY_PCT: 48
+      BASE_CO2_PPM: 800
+      BASE_OCCUPANCY: 3
+      BASE_POWER_W: 120
+      INTERVAL_SEC: 10
+    depends_on:
+      - darient_mqtt
+      - darient_backend
+    networks:
+      - darient_network
+
+volumes:
+  darient_postgres_data:
+  darient_mqtt_data:
+  darient_mqtt_log:
+
+networks:
+  darient_network:
+    name: darient_network

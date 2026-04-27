@@ -1,0 +1,10 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+CMD ["node", "index.js", "--site-id", "SITE_A", "--office-id", "OFFICE_1"]
