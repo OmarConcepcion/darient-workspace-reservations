@@ -9,6 +9,7 @@ import { notFoundHandler } from "../shared/http/not-found-handler.js";
 import { logger } from "../shared/logger/logger.js";
 import { openApiSpec } from "../shared/openapi/openapi.js";
 import { createPlaceRouter } from "../modules/places/presentation/place-routes.js";
+import { createReservationRouter } from "../modules/reservations/presentation/reservation-routes.js";
 import { createSpaceRouter } from "../modules/spaces/presentation/space-routes.js";
 import {
   createDefaultDependencies,
@@ -17,8 +18,12 @@ import {
 import { healthRouter } from "./health.routes.js";
 
 export const createApp = (
-  dependencies: AppDependencies = createDefaultDependencies()
+  dependencyOverrides: Partial<AppDependencies> = {}
 ): express.Express => {
+  const dependencies = {
+    ...createDefaultDependencies(),
+    ...dependencyOverrides
+  };
   const app = express();
 
   app.disable("x-powered-by");
@@ -35,6 +40,13 @@ export const createApp = (
   apiRouter.use(
     "/spaces",
     createSpaceRouter(dependencies.spaceRepository, dependencies.placeRepository)
+  );
+  apiRouter.use(
+    "/reservations",
+    createReservationRouter(
+      dependencies.reservationRepository,
+      dependencies.spaceRepository
+    )
   );
   apiRouter.use(notFoundHandler);
 
