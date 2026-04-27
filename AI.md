@@ -16,6 +16,9 @@ La AI ayudó a:
 - Documentar decisiones técnicas.
 - Preparar estructura de documentación.
 - Definir stack, endpoints, schemas, fases y convenciones.
+- Implementar la fase foundation + core backend.
+- Generar pruebas automatizadas de backend y frontend foundation.
+- Crear configuración Docker y scripts de setup.
 
 ## Decisiones tomadas con apoyo de AI
 
@@ -65,3 +68,15 @@ La AI no debe:
 | Documentación | README, AGENTS, AI, requirements, phases, status |
 
 Este documento debe actualizarse si la AI se usa para generar código, tests o documentación adicional.
+
+## Registro de implementación
+
+| Uso | Resultado |
+|---|---|
+| Foundation backend | Express, TypeScript, health, Swagger, API key, logging y error handling |
+| Database foundation | Prisma multi-schema, migración inicial y seed `SITE_A/OFFICE_1/OFFICE_2` |
+| Core API | Places, spaces y reservations con arquitectura hexagonal |
+| Reservation rules | Conflicto, límite semanal, cancelación y expiración dinámica |
+| Frontend foundation | Vite, React Router, Axios, TanStack Query, Tailwind, Sonner y MSW |
+| Docker | Compose raíz con backend, frontend, Postgres, MQTT y simulador black box |
+| Tests | Vitest/Supertest backend y Vitest/RTL frontend |

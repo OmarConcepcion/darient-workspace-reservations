@@ -4,6 +4,19 @@ Sistema full-stack para gestión de reservas de espacios de trabajo con integrac
 
 El proyecto se trabajará con **Spec-Driven Development (SDD) with AI**: primero se documentan requerimientos, decisiones y contratos; luego se implementa.
 
+## Estado actual
+
+Foundation + core backend implementado:
+
+- Backend Express/TypeScript en `/api/v1`.
+- Health endpoint, Swagger, API key middleware, Pino logging y error handler estándar.
+- Prisma multi-schema con `core`, `iot` y `audit`.
+- Seed inicial para `SITE_A`, `OFFICE_1` y `OFFICE_2`.
+- CRUD core de places, spaces y reservations.
+- Reglas de reservas: conflicto de horario, máximo 3 activas por cliente por semana, cancelación y expiración dinámica.
+- Frontend Vite/React inicial con Router, Axios, TanStack Query, Tailwind, Sonner y MSW.
+- Docker Compose raíz con backend, frontend, PostgreSQL, MQTT y simulador IoT como caja negra.
+
 ## Stack aprobado
 
 ### Backend
@@ -194,7 +207,9 @@ AND status = ACTIVE
 ## Comandos sugeridos
 
 ```bash
-docker compose up --build
+npm install --prefix backend
+npm install --prefix frontend
+npm run setup:env
 ```
 
 Backend:
@@ -207,6 +222,27 @@ npm run prisma:migrate
 npm run prisma:seed
 npm run dev
 npm test
+```
+
+Raíz:
+
+```bash
+npm run build
+npm test
+npm run docker:up
+```
+
+Docker:
+
+```bash
+docker compose up --build
+```
+
+El backend en Docker usa:
+
+```txt
+DATABASE_URL=postgresql://darient:darient@darient_postgres:5432/darient?schema=core
+MQTT_URL=mqtt://darient_mqtt:1883
 ```
 
 Frontend:
