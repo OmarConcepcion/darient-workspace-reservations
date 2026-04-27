@@ -11,6 +11,7 @@ dist/
 build/
 coverage/
 .vite/
+*.tsbuildinfo
 
 # Generated clients and caches
 backend/src/generated/
