@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["core", "iot", "audit"]
+}
+
+enum ReservationStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+
+  @@map("reservation_status")
+  @@schema("core")
+}
+
+enum AlertType {
+  CO2
+  OCCUPANCY_MAX
+  OCCUPANCY_UNEXPECTED
+
+  @@map("alert_type")
+  @@schema("iot")
+}
+
+enum AlertStatus {
+  OPEN
+  RESOLVED
+
+  @@map("alert_status")
+  @@schema("iot")
+}
+
+enum RawTelemetryProcessingStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+
+  @@map("raw_telemetry_processing_status")
+  @@schema("audit")
+}
+
+enum DeviceDesiredPublishStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+
+  @@map("device_desired_publish_status")
+  @@schema("iot")
+}
+
+model Place {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  iotSiteId String   @unique @map("iot_site_id")
+  name       String
+  latitude   Float
+  longitude  Float
+  timezone   String   @default("America/Panama")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  spaces       Space[]
+  reservations Reservation[]
+
+  @@map("places")
+  @@schema("core")
+}
+
+model Space {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  placeId           String   @map("place_id") @db.Uuid
+  iotOfficeId       String   @map("iot_office_id")
+  name              String
+  locationReference String?  @map("location_reference")
+  capacity          Int
+  description       String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  place                 Place                  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  reservations          Reservation[]
+  officeHours           OfficeHour[]
+  telemetryAggregations TelemetryAggregation[]
+  deviceDesired         DeviceDesired?
+  deviceReported        DeviceReported?
+  alerts                Alert[]
+
+  @@unique([placeId, iotOfficeId], map: "spaces_place_id_iot_office_id_key")
+  @@index([placeId], map: "spaces_place_id_idx")
+  @@map("spaces")
+  @@schema("core")
+}
+
+model Reservation {
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  placeId       String            @map("place_id") @db.Uuid
+  spaceId       String            @map("space_id") @db.Uuid
+  customerEmail String            @map("customer_email")
+  startsAt      DateTime          @map("starts_at")
+  endsAt        DateTime          @map("ends_at")
+  status        ReservationStatus @default(ACTIVE)
+  cancelledAt   DateTime?         @map("cancelled_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([spaceId, status, startsAt, endsAt], map: "reservations_space_status_time_idx")
+  @@index([customerEmail, status, startsAt], map: "reservations_customer_status_week_idx")
+  @@map("reservations")
+  @@schema("core")
+}
+
+model OfficeHour {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  spaceId   String   @map("space_id") @db.Uuid
+  dayOfWeek Int      @map("day_of_week")
+  opensAt   String   @map("opens_at") @db.VarChar(5)
+  closesAt  String   @map("closes_at") @db.VarChar(5)
+  isEnabled Boolean  @default(true) @map("is_enabled")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, dayOfWeek], map: "office_hours_space_id_day_of_week_key")
+  @@map("office_hours")
+  @@schema("core")
+}
+
+model TelemetryAggregation {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  spaceId        String   @map("space_id") @db.Uuid
+  windowStart    DateTime @map("window_start")
+  windowEnd      DateTime @map("window_end")
+  avgTempC       Float    @map("avg_temp_c")
+  avgHumidityPct Float    @map("avg_humidity_pct")
+  avgCo2Ppm      Float    @map("avg_co2_ppm")
+  maxCo2Ppm      Int      @map("max_co2_ppm")
+  avgOccupancy   Float    @map("avg_occupancy")
+  maxOccupancy   Int      @map("max_occupancy")
+  latestPowerW   Int      @map("latest_power_w")
+  sampleCount    Int      @map("sample_count")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([spaceId, windowStart], map: "telemetry_aggregations_space_window_idx")
+  @@map("telemetry_aggregations")
+  @@schema("iot")
+}
+
+model DeviceDesired {
+  id                  String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  spaceId             String                     @unique @map("space_id") @db.Uuid
+  samplingIntervalSec Int                        @default(10) @map("sampling_interval_sec")
+  co2AlertThreshold   Int                        @default(1000) @map("co2_alert_threshold")
+  publishStatus       DeviceDesiredPublishStatus @default(PENDING) @map("publish_status")
+  lastPublishedAt     DateTime?                  @map("last_published_at")
+  publishError        String?                    @map("publish_error")
+  createdAt           DateTime                   @default(now()) @map("created_at")
+  updatedAt           DateTime                   @updatedAt @map("updated_at")
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@map("device_desired")
+  @@schema("iot")
+}
+
+model DeviceReported {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  spaceId             String   @unique @map("space_id") @db.Uuid
+  samplingIntervalSec Int      @map("sampling_interval_sec")
+  co2AlertThreshold   Int      @map("co2_alert_threshold")
+  firmwareVersion     String   @map("firmware_version")
+  reportedAt          DateTime @map("reported_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@map("device_reported")
+  @@schema("iot")
+}
+
+model Alert {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  spaceId    String      @map("space_id") @db.Uuid
+  type       AlertType
+  status     AlertStatus @default(OPEN)
+  startedAt  DateTime    @map("started_at")
+  resolvedAt DateTime?   @map("resolved_at")
+  metadata   Json?
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([spaceId, status, type], map: "alerts_space_status_type_idx")
+  @@map("alerts")
+  @@schema("iot")
+}
+
+model RawTelemetry {
+  id               String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topic            String
+  siteId           String                       @map("site_id")
+  officeId         String                       @map("office_id")
+  payload          Json
+  processingStatus RawTelemetryProcessingStatus @default(RECEIVED) @map("processing_status")
+  receivedAt       DateTime                     @default(now()) @map("received_at")
+  processedAt      DateTime?                    @map("processed_at")
+  errorMessage     String?                      @map("error_message")
+
+  @@index([siteId, officeId, receivedAt], map: "raw_telemetry_site_office_received_idx")
+  @@map("raw_telemetry")
+  @@schema("audit")
+}
