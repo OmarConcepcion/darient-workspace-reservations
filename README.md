@@ -6,7 +6,7 @@ El proyecto se trabajará con **Spec-Driven Development (SDD) with AI**: primero
 
 ## Estado actual
 
-Foundation + backend IoT base implementado:
+Foundation + backend IoT hardening implementado:
 
 - Backend Express/TypeScript en `/api/v1`.
 - Health endpoint, Swagger, API key middleware, Pino logging y error handler estándar.
@@ -15,7 +15,9 @@ Foundation + backend IoT base implementado:
 - CRUD core de places, spaces y reservations.
 - Reglas de reservas: conflicto de horario, máximo 3 activas por cliente por semana, cancelación y expiración dinámica.
 - Procesamiento backend de tópicos `telemetry` y `reported`.
-- Endpoints admin IoT, publicación de `desired` por MQTT y stream SSE.
+- Endpoints admin IoT, publicación de `desired` por MQTT, stream SSE y manejo explícito de error `502` si falla el publish.
+- Runtime MQTT compartido con startup/shutdown ordenado y logs operativos.
+- Suite real de integración backend IoT contra API + MQTT + PostgreSQL.
 - Frontend Vite/React inicial con Router, Axios, TanStack Query, Tailwind, Sonner y MSW.
 - Docker Compose raíz con backend, frontend, PostgreSQL, MQTT y simulador IoT como caja negra.
 
@@ -123,6 +125,22 @@ sites/+/offices/+/reported
 sites/{site_id}/offices/{office_id}/desired
 ```
 
+Eventos SSE públicos:
+
+```txt
+telemetry_updated
+alert_updated
+device_reported_updated
+```
+
+Reglas temporales de alertas implementadas:
+
+```txt
+CO2: abrir 5 min > threshold, resolver 2 min <= threshold
+OCCUPANCY_MAX: abrir 2 min > capacity, resolver 1 min <= capacity
+OCCUPANCY_UNEXPECTED: abrir 10 min ocupación inesperada, resolver 5 min en 0 o vuelta a condición válida
+```
+
 ## Docker esperado
 
 Servicios:
@@ -188,6 +206,8 @@ PATCH /api/v1/admin/spaces/:space_id/device_desired
 GET   /api/v1/admin/events/stream
 ```
 
+Si falla la publicación MQTT de `device_desired`, el backend responde `502` con el formato estándar de error.
+
 ## Reglas de reservas
 
 - El cliente no elimina reservas desde la interfaz; solo cancela.
@@ -224,6 +244,7 @@ npm run prisma:migrate
 npm run prisma:seed
 npm run dev
 npm test
+npm run test:iot:real
 ```
 
 Raíz:

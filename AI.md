@@ -20,6 +20,7 @@ La AI ayudó a:
 - Generar pruebas automatizadas de backend y frontend foundation.
 - Crear configuración Docker y scripts de setup.
 - Implementar el primer bloque backend de IoT y SSE.
+- Endurecer lifecycle MQTT/SSE del backend y agregar pruebas reales de integración IoT.
 
 ## Decisiones tomadas con apoyo de AI
 
@@ -82,3 +83,4 @@ Este documento debe actualizarse si la AI se usa para generar código, tests o d
 | Docker | Compose raíz con backend, frontend, Postgres, MQTT y simulador black box |
 | Tests | Vitest/Supertest backend y Vitest/RTL frontend |
 | Backend IoT | Procesamiento MQTT, endpoints admin IoT y stream SSE |
+| Backend IoT hardening | Contrato SSE alineado, errores `502` en desired publish, timezone-aware office hours y suite real MQTT/API/DB |

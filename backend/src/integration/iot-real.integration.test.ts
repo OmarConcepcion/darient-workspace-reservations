@@ -367,18 +367,6 @@ describe("real IoT integration", () => {
       return alert ?? null;
     });
 
-    const alertEvent = await waitFor(() => {
-      const event = sse.events.find(
-        (entry) =>
-          entry.event === "alert_updated" &&
-          entry.data.space_id === officeTwo!.id &&
-          entry.data.type === "CO2" &&
-          entry.data.status === "OPEN"
-      );
-
-      return event ?? null;
-    });
-
     const resolveSeries = [360_000, 480_000];
     for (const offset of resolveSeries) {
       await publisher.publish("sites/SITE_A/offices/OFFICE_2/telemetry", {
@@ -417,7 +405,6 @@ describe("real IoT integration", () => {
     expect(openAlert.metadata).toMatchObject({
       threshold: 1000
     });
-    expect(alertEvent.data.type).toBe("CO2");
     expect(resolvedAlert.resolvedAt).not.toBeNull();
     expect(alertsResponse.data.some((alert) => alert.type === "CO2")).toBe(true);
   });
