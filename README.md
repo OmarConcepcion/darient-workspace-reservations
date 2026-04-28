@@ -581,6 +581,83 @@ En resumen:
 
 ---
 
+## Anexos: capturas de pantalla
+
+Las siguientes capturas muestran las principales vistas del frontend y la documentación interactiva de la API.  
+Todas las imágenes se encuentran en la carpeta [`screenshots/`](./screenshots/).
+
+### 1. Documentación Swagger de la API
+
+Vista de Swagger UI con los endpoints principales del backend, incluyendo health, places, spaces, reservations y endpoints administrativos relacionados con IoT.
+
+<img src="./screenshots/SCR-20260428-mmpl.png" alt="Documentación Swagger de la API" width="900" />
+
+---
+
+### 2. Vista de ayuda
+
+Pantalla de soporte con accesos rápidos a la documentación de la API, stream IoT y dashboard administrativo.
+
+<img src="./screenshots/SCR-20260428-mmlx.png" alt="Vista de ayuda del frontend" width="900" />
+
+---
+
+### 3. Dashboard administrativo
+
+Vista general del dashboard administrativo con métricas principales: telemetría en vivo, total de oficinas, capacidad total y total de reservas.
+
+<img src="./screenshots/SCR-20260428-mlyf.png" alt="Dashboard administrativo general" width="900" />
+
+---
+
+### 4. Detalle administrativo de una oficina IoT
+
+Vista administrativa de una oficina específica con telemetría en vivo, métricas de CO2, ocupación, temperatura, potencia, estado del dispositivo, configuración deseada y alertas.
+
+<img src="./screenshots/SCR-20260428-mmec.png" alt="Detalle administrativo de oficina IoT" width="900" />
+
+---
+
+### 5. Listado de oficinas
+
+Vista principal de oficinas reservables, con filtros por nombre, lugar, piso y ordenamiento.
+
+<img src="./screenshots/SCR-20260428-mkhw.png" alt="Listado de oficinas disponibles" width="900" />
+
+---
+
+### 6. Detalle de oficina
+
+Vista de detalle de una oficina específica, mostrando capacidad, ubicación, zona horaria, identificador IoT y disponibilidad diaria.
+
+<img src="./screenshots/SCR-20260428-mlcd.png" alt="Detalle de oficina reservable" width="900" />
+
+---
+
+### 7. Listado de reservas
+
+Vista de reservas existentes con filtros por cliente, oficina y estado.
+
+<img src="./screenshots/SCR-20260428-mlfd.png" alt="Listado de reservas" width="900" />
+
+---
+
+### 8. Creación de reserva
+
+Formulario para crear una nueva reserva, seleccionando lugar, oficina, cliente, fecha, hora de inicio y hora de finalización. También muestra una referencia visual de disponibilidad.
+
+<img src="./screenshots/SCR-20260428-mlsb.png" alt="Formulario de creación de reserva" width="900" />
+
+---
+
+### 9. Detalle de reserva
+
+Vista de detalle de una reserva específica, incluyendo cliente, oficina, rango reservado, duración, estado y cronología.
+
+<img src="./screenshots/SCR-20260428-mlmj.png" alt="Detalle de reserva" width="900" />
+
+---
+
 ## Notas finales
 
 Este proyecto fue desarrollado buscando cumplir los requerimientos funcionales y técnicos solicitados, manteniendo una arquitectura clara, separación de responsabilidades, documentación suficiente, pruebas automatizadas y soporte para el bonus IoT.
