@@ -46,3 +46,4 @@
 - [x] Reservation create flow updated to use one day plus hourly range with visual availability reference.
 - [x] Root environment files removed; workspace env setup now initializes only backend and frontend app environments.
 - [x] Root, backend and frontend scripts now expose `typecheck`.
+- [x] Frontend visible UI translated to Spanish with shared copy, localized dates and frontend-side error-code translation.

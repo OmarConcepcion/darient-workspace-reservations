@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { formatUiDateTime, uiTerms } from "../../../shared/i18n";
 import { normalizeApiError } from "../../../shared/api/errors";
 import {
   ArrowRightIcon,
@@ -38,14 +39,18 @@ export const SpaceDetailView = () => {
         className="inline-flex min-h-11 items-center gap-2 rounded-2xl px-1 text-sm font-semibold text-slate-500 transition hover:text-brand-700"
       >
         <ChevronLeftIcon size={16} />
-        Back to spaces
+        Volver a oficinas
       </Link>
 
       {spaceQuery.isLoading ? (
-        <Skeleton className="h-80" aria-busy="true" aria-label="Loading space" />
+        <Skeleton
+          className="h-80"
+          aria-busy="true"
+          aria-label={uiTerms.a11y.loadingSpace}
+        />
       ) : spaceQuery.isError ? (
         <ErrorState
-          title="Space not available"
+          title="Oficina no disponible"
           message={normalizeApiError(spaceQuery.error).message}
         />
       ) : spaceQuery.data ? (
@@ -73,14 +78,14 @@ export const SpaceDetailView = () => {
                     </span>
                     <div className="min-w-0">
                       <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">
-                        {placeQuery.data?.name ?? "Place pending..."}
+                        {placeQuery.data?.name ?? "Lugar pendiente..."}
                       </p>
                       <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
                         {spaceQuery.data.name}
                       </h1>
                       <Badge tone="brand" className="mt-4">
                         <UsersIcon size={12} />
-                        Capacity {spaceQuery.data.capacity}
+                        Capacidad {spaceQuery.data.capacity}
                       </Badge>
                     </div>
                   </div>
@@ -89,24 +94,30 @@ export const SpaceDetailView = () => {
                 <dl className="grid gap-4 border-t border-slate-200/80 pt-6 sm:grid-cols-2 xl:grid-cols-4">
                   <HeroField
                     icon={<MapPinIcon size={17} />}
-                    label="Location"
+                    label="Ubicación"
                     value={spaceQuery.data.locationReference ?? "-"}
                   />
                   <HeroField
                     icon={<ClockIcon size={17} />}
-                    label="Timezone"
+                    label="Zona horaria"
                     value={placeQuery.data?.timezone ?? "-"}
                   />
                   <HeroField
                     icon={<CpuIcon size={17} />}
-                    label="IoT office ID"
+                    label="ID IoT de oficina"
                     value={spaceQuery.data.iotOfficeId}
                     code
                   />
                   <HeroField
                     icon={<CalendarIcon size={17} />}
-                    label="Created"
-                    value={new Date(spaceQuery.data.createdAt).toLocaleString()}
+                    label="Creada"
+                    value={formatUiDateTime(spaceQuery.data.createdAt, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
                   />
                 </dl>
               </div>
@@ -114,39 +125,45 @@ export const SpaceDetailView = () => {
 
             <section className="space-y-4">
               <h2 className="text-xl font-semibold tracking-tight text-slate-950">
-                Space details
+                Detalles de la oficina
               </h2>
               <div className="grid gap-4 lg:grid-cols-2">
                 <DetailCard
                   icon={<MapPinIcon size={21} />}
-                  label="Location reference"
+                  label="Referencia de ubicación"
                   value={spaceQuery.data.locationReference ?? "-"}
-                  hint="Where people will find this workspace."
+                  hint="Cómo las personas encontrarán esta oficina."
                 />
                 <DetailCard
                   icon={<ClockIcon size={21} />}
-                  label="Timezone"
+                  label="Zona horaria"
                   value={placeQuery.data?.timezone ?? "-"}
-                  hint="All reservation times are interpreted in this timezone."
+                  hint="Todas las reservas se interpretan en esta zona horaria."
                 />
                 <DetailCard
                   icon={<CpuIcon size={21} />}
-                  label="IoT office ID"
+                  label="ID IoT de oficina"
                   value={spaceQuery.data.iotOfficeId}
-                  hint="Unique identifier used for telemetry and device state."
+                  hint="Identificador único usado para telemetría y estado del dispositivo."
                   code
                 />
                 <DetailCard
                   icon={<CalendarIcon size={21} />}
-                  label="Created"
-                  value={new Date(spaceQuery.data.createdAt).toLocaleString()}
-                  hint="The date this workspace was configured."
+                  label="Creada"
+                  value={formatUiDateTime(spaceQuery.data.createdAt, {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })}
+                  hint="Fecha en que se configuró esta oficina."
                 />
               </div>
               <Card className="p-6">
-                <p className="text-sm font-semibold text-slate-950">Description</p>
+                <p className="text-sm font-semibold text-slate-950">Descripción</p>
                 <p className="mt-2 leading-7 text-slate-600">
-                  {spaceQuery.data.description ?? "No description provided."}
+                  {spaceQuery.data.description ?? "No se proporcionó descripción."}
                 </p>
               </Card>
             </section>
@@ -168,10 +185,10 @@ export const SpaceDetailView = () => {
                 </span>
                 <div>
                   <h2 className="font-semibold text-slate-950">
-                    Reservation ready
+                    Lista para reservar
                   </h2>
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    Create a booking for this space from the reservation flow.
+                    Crea una reserva para esta oficina desde el flujo de reservas.
                   </p>
                 </div>
               </div>
@@ -179,21 +196,21 @@ export const SpaceDetailView = () => {
                 to="/reservations/new"
                 className={buttonClasses("primary", "md", "mt-6 w-full")}
               >
-                Create reservation
+                {uiTerms.actions.createReservation}
                 <ArrowRightIcon size={16} />
               </Link>
             </Card>
 
             <Card className="p-6">
-              <h2 className="font-semibold text-slate-950">Quick stats</h2>
+              <h2 className="font-semibold text-slate-950">Resumen rápido</h2>
               <dl className="mt-5 space-y-4 text-sm">
-                <SidebarStat label="Capacity" value={String(spaceQuery.data.capacity)} />
+                <SidebarStat label="Capacidad" value={String(spaceQuery.data.capacity)} />
                 <SidebarStat
-                  label="Place"
-                  value={placeQuery.data?.name ?? "Pending"}
+                  label="Lugar"
+                  value={placeQuery.data?.name ?? "Pendiente"}
                 />
                 <SidebarStat
-                  label="IoT office"
+                  label="Oficina IoT"
                   value={spaceQuery.data.iotOfficeId}
                 />
               </dl>
@@ -290,14 +307,14 @@ const AvailabilityCalendar = ({
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h2 className="text-xl font-semibold tracking-tight text-slate-950">
-          Daily availability
+          Disponibilidad diaria
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Availability is calculated from office hours and active reservations.
+          La disponibilidad se calcula con horario de oficina y reservas activas.
         </p>
       </div>
       <label className="text-sm font-semibold text-slate-700">
-        Date
+        Fecha
         <input
           type="date"
           value={selectedDate}
@@ -313,30 +330,30 @@ const AvailabilityCalendar = ({
         <Skeleton className="h-32" />
       ) : isError ? (
         <ErrorState
-          title="Availability unavailable"
-          message="We couldn't load this space's daily availability."
+          title="Disponibilidad no disponible"
+          message="No pudimos cargar la disponibilidad diaria de esta oficina."
         />
       ) : availability ? (
         <div className="space-y-5">
           <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 ring-1 ring-emerald-100">
-              Available
+              Disponible
             </span>
             <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700 ring-1 ring-rose-100">
-              Reserved
+              Reservado
             </span>
           </div>
           <div className="grid gap-3 lg:grid-cols-2">
             <WindowList
-              title="Available"
+              title="Disponible"
               tone="available"
-              empty="No available windows remain for this day."
+              empty="No quedan ventanas disponibles para este día."
               windows={availability.availableWindows}
             />
             <WindowList
-              title="Reserved"
+              title="Reservado"
               tone="reserved"
-              empty="No reserved windows on this day."
+              empty="No hay ventanas reservadas para este día."
               windows={availability.reservedWindows}
             />
           </div>

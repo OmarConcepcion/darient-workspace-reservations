@@ -1,9 +1,11 @@
+import { formatUiDate, formatUiDateTime, formatUiTime } from "../../../shared/i18n";
+
 export const formatDateTime = (value: string): string =>
-  new Date(value).toLocaleString(undefined, {
+  formatUiDateTime(value, {
     year: "numeric",
     month: "long",
     day: "numeric",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit"
   });
 
@@ -11,17 +13,18 @@ export const formatDateTimeRange = (startsAt: string, endsAt: string): string =>
   `${formatDateTime(startsAt)} - ${formatDateTime(endsAt)}`;
 
 export const formatIsoTime = (value: string): string => {
-  const date = new Date(value);
-  return `${String(date.getHours()).padStart(2, "0")}:${String(
-    date.getMinutes()
-  ).padStart(2, "0")}`;
+  return formatUiTime(value, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
 };
 
 export const formatTimeRange = (startsAt: string, endsAt: string): string =>
   `${startsAt} - ${endsAt}`;
 
 export const formatDateInputLabel = (value: string): string =>
-  new Date(`${value}T12:00:00`).toLocaleDateString(undefined, {
+  formatUiDate(`${value}T12:00:00`, {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -36,9 +39,9 @@ export const formatDuration = (startsAt: string, endsAt: string): string => {
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
 
-  if (hours === 0) return `${remainder}m`;
-  if (remainder === 0) return `${hours}h`;
-  return `${hours}h ${remainder}m`;
+  if (hours === 0) return `${remainder} min`;
+  if (remainder === 0) return `${hours} h`;
+  return `${hours} h ${remainder} min`;
 };
 
 export const todayDateInputValue = (): string => {

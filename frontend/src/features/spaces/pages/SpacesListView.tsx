@@ -1,5 +1,9 @@
 import { useDeferredValue, useMemo, useState } from "react";
 
+import {
+  pluralizeSpanish,
+  uiTerms
+} from "../../../shared/i18n";
 import { normalizeApiError } from "../../../shared/api/errors";
 import {
   BuildingIcon,
@@ -22,10 +26,10 @@ type SortKey = "name_asc" | "name_desc" | "capacity_asc" | "capacity_desc";
 type ViewMode = "grid" | "list";
 
 const SORT_LABELS: Record<SortKey, string> = {
-  name_asc: "Name (A–Z)",
-  name_desc: "Name (Z–A)",
-  capacity_asc: "Capacity (low–high)",
-  capacity_desc: "Capacity (high–low)"
+  name_asc: "Nombre (A–Z)",
+  name_desc: "Nombre (Z–A)",
+  capacity_asc: "Capacidad (menor a mayor)",
+  capacity_desc: "Capacidad (mayor a menor)"
 };
 
 export const SpacesListView = () => {
@@ -99,24 +103,24 @@ export const SpacesListView = () => {
   return (
     <section className="space-y-8">
       <PageHeader
-        eyebrow="Workspaces"
-        title="Spaces"
-        description="All bookable workspaces across configured places. View details, check capacity, and find the right room without fighting the layout."
+        eyebrow="Oficinas"
+        title="Oficinas"
+        description="Todas las oficinas reservables en los lugares configurados. Revisa detalles, capacidad y encuentra el espacio adecuado sin fricción."
       />
 
       {spacesQuery.isLoading ? (
         <SpacesSkeleton />
       ) : spacesQuery.isError ? (
         <ErrorState
-          title="We couldn't load spaces"
+          title="No pudimos cargar las oficinas"
           message={normalizeApiError(spacesQuery.error).message}
           onRetry={() => spacesQuery.refetch()}
         />
       ) : (spacesQuery.data ?? []).length === 0 ? (
         <EmptyState
           icon={<BuildingIcon size={20} />}
-          title="No spaces yet"
-          description="Create a space from the backend or admin tooling to see it here."
+          title="No hay oficinas todavía"
+          description="Crea una oficina desde el backend o las herramientas admin para verla aquí."
         />
       ) : (
         <>
@@ -128,7 +132,7 @@ export const SpacesListView = () => {
                 </span>
                 <input
                   type="text"
-                  placeholder="Search spaces by name or location..."
+                  placeholder="Buscar oficinas por nombre o ubicación..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-800 shadow-sm shadow-slate-900/[0.02] placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100"
@@ -136,12 +140,12 @@ export const SpacesListView = () => {
               </div>
 
               <FilterSelect
-                label="Place"
+                label="Lugar"
                 value={placeFilter}
                 onChange={setPlaceFilter}
                 icon={<BuildingIcon size={17} />}
               >
-                <option value="all">All places</option>
+                <option value="all">Todos los lugares</option>
                 {placesQuery.data?.map((place) => (
                   <option key={place.id} value={place.id}>
                     {place.name}
@@ -150,12 +154,12 @@ export const SpacesListView = () => {
               </FilterSelect>
 
               <FilterSelect
-                label="Floor"
+                label="Piso"
                 value={locationFilter}
                 onChange={setLocationFilter}
                 icon={<LayersIcon size={17} />}
               >
-                <option value="all">All floors</option>
+                <option value="all">Todos los pisos</option>
                 {locationOptions.map((location) => (
                   <option key={location} value={location}>
                     {location}
@@ -164,7 +168,7 @@ export const SpacesListView = () => {
               </FilterSelect>
 
               <FilterSelect
-                label="Sort by"
+                label="Ordenar por"
                 value={sort}
                 onChange={(value) => setSort(value as SortKey)}
                 icon={<ChevronDownIcon size={17} />}
@@ -184,7 +188,7 @@ export const SpacesListView = () => {
                 className="justify-center"
               >
                 <XIcon size={15} />
-                Clear filters
+                {uiTerms.actions.clearFilters}
               </Button>
             </div>
           </Card>
@@ -192,8 +196,12 @@ export const SpacesListView = () => {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-medium text-slate-600">
               {filteredSpaces.length === (spacesQuery.data ?? []).length
-                ? `${filteredSpaces.length} space${filteredSpaces.length !== 1 ? "s" : ""}`
-                : `${filteredSpaces.length} of ${(spacesQuery.data ?? []).length} spaces`}
+                ? pluralizeSpanish(
+                    filteredSpaces.length,
+                    uiTerms.nouns.space,
+                    uiTerms.nouns.spacePlural
+                  )
+                : `${filteredSpaces.length} de ${(spacesQuery.data ?? []).length} ${uiTerms.nouns.spacePlural}`}
             </p>
             <div className="inline-flex w-fit rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
               {(["grid", "list"] as ViewMode[]).map((mode) => (
@@ -207,7 +215,7 @@ export const SpacesListView = () => {
                       : "text-slate-500 hover:text-slate-900"
                   }`}
                 >
-                  {mode}
+                  {mode === "grid" ? "cuadrícula" : "lista"}
                 </button>
               ))}
             </div>
@@ -216,11 +224,11 @@ export const SpacesListView = () => {
           {filteredSpaces.length === 0 ? (
             <EmptyState
               icon={<SearchIcon size={20} />}
-              title="No spaces match your search"
-              description="Try adjusting your filters or search term."
+              title="No hay oficinas que coincidan con tu búsqueda"
+              description="Prueba ajustando los filtros o el término de búsqueda."
               action={
                 <Button variant="secondary" size="sm" onClick={clearFilters}>
-                  Clear filters
+                  {uiTerms.actions.clearFilters}
                 </Button>
               }
             />
@@ -251,7 +259,7 @@ export const SpacesListView = () => {
 const SpacesSkeleton = () => (
   <div
     aria-busy="true"
-    aria-label="Loading spaces"
+    aria-label={uiTerms.a11y.loadingSpaces}
     className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3"
   >
     {Array.from({ length: 6 }).map((_, index) => (

@@ -58,7 +58,7 @@ describe("AdminOverviewView", () => {
     expect(await screen.findByText("Focus Room")).toBeInTheDocument();
     expect(screen.getByText("Headquarters")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Open dashboard/i })
+      screen.getByRole("link", { name: /Abrir dashboard/i })
     ).toHaveAttribute("href", `/admin/spaces/${SPACE_ID}`);
   });
 
@@ -80,6 +80,6 @@ describe("AdminOverviewView", () => {
 
     renderWithProviders(<AdminOverviewView />);
 
-    expect(await screen.findByText("No spaces to monitor")).toBeInTheDocument();
+    expect(await screen.findByText("No hay oficinas para monitorear")).toBeInTheDocument();
   });
 });

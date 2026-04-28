@@ -73,10 +73,8 @@ describe("ReservationsListView", () => {
 
     expect(await screen.findByText("alice@example.com")).toBeInTheDocument();
     expect(screen.getAllByText("Sky Room").length).toBeGreaterThan(0);
-    expect(screen.getByText("Active")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Cancel" })
-    ).toBeInTheDocument();
+    expect(screen.getAllByText("Activa").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
   });
 
   it("shows the empty state when no reservations exist", async () => {
@@ -94,7 +92,7 @@ describe("ReservationsListView", () => {
 
     renderWithProviders(<ReservationsListView />);
 
-    expect(await screen.findByText("No reservations yet")).toBeInTheDocument();
+    expect(await screen.findByText("No hay reservas todavía")).toBeInTheDocument();
   });
 
   it("surfaces normalized backend errors", async () => {
@@ -118,9 +116,7 @@ describe("ReservationsListView", () => {
 
     renderWithProviders(<ReservationsListView />);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Reservations service is down."
-    );
+    expect(await screen.findByRole("alert")).toHaveTextContent("Ocurrió un error interno.");
   });
 
   it("cancels an active reservation and shows a success toast", async () => {
@@ -152,17 +148,15 @@ describe("ReservationsListView", () => {
     const user = userEvent.setup();
     renderWithProviders(<ReservationsListView />);
 
-    const cancelButton = await screen.findByRole("button", { name: "Cancel" });
+    const cancelButton = await screen.findByRole("button", { name: "Cancelar" });
     await user.click(cancelButton);
     expect(
-      screen.getByRole("dialog", { name: "Cancel reservation" })
+      screen.getByRole("dialog", { name: "Cancelar reserva" })
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Confirm cancel" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar cancelación" }));
 
     await waitFor(() => expect(cancelHits).toBe(1));
-    await waitFor(() =>
-      expect(toastSuccess).toHaveBeenCalledWith("Reservation cancelled.")
-    );
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Reserva cancelada."));
     expect(toastError).not.toHaveBeenCalled();
   });
 
@@ -196,12 +190,14 @@ describe("ReservationsListView", () => {
     const user = userEvent.setup();
     renderWithProviders(<ReservationsListView />);
 
-    const cancelButton = await screen.findByRole("button", { name: "Cancel" });
+    const cancelButton = await screen.findByRole("button", { name: "Cancelar" });
     await user.click(cancelButton);
-    await user.click(screen.getByRole("button", { name: "Confirm cancel" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar cancelación" }));
 
     await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith("Reservation already cancelled.")
+      expect(toastError).toHaveBeenCalledWith(
+        "La acción no se pudo completar por un conflicto con el estado actual."
+      )
     );
     expect(toastSuccess).not.toHaveBeenCalled();
   });
@@ -257,15 +253,15 @@ describe("ReservationsListView", () => {
     const user = userEvent.setup();
     renderWithProviders(<ReservationsListView />);
 
-    await user.click(await screen.findByRole("button", { name: "Delete" }));
+    await user.click(await screen.findByRole("button", { name: "Eliminar" }));
     expect(
-      screen.getByRole("dialog", { name: "Delete reservation" })
+      screen.getByRole("dialog", { name: "Eliminar reserva" })
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Confirm delete" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar eliminación" }));
 
     await waitFor(() => expect(deleteHits).toBe(1));
     await waitFor(() =>
-      expect(toastSuccess).toHaveBeenCalledWith("Reservation deleted.")
+      expect(toastSuccess).toHaveBeenCalledWith("Reserva eliminada.")
     );
   });
 });

@@ -57,6 +57,10 @@ types/
 - Modern but not overloaded.
 - Responsive.
 - Smooth animations.
+- UI visible en español.
+- Variables, rutas, payloads, ids y contratos internos permanecen en inglés.
+- Errores backend conocidos se traducen en frontend por `error.code`.
+- Fechas y horas visibles usan locale fijo `es-PA`.
 - Sonner toasts for actions.
 - Inline errors for forms.
 - Loading and empty states.

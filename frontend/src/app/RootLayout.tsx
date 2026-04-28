@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 
 import { useEventStream } from "../features/admin_dashboard/hooks/use-event-stream";
+import { iotConnectionLabel, uiTerms } from "../shared/i18n";
 import {
   ActivityIcon,
   BuildingIcon,
@@ -11,9 +12,13 @@ import {
 } from "../shared/ui";
 
 const navItems = [
-  { to: "/spaces", label: "Spaces", icon: <BuildingIcon size={14} /> },
-  { to: "/reservations", label: "Reservations", icon: <CalendarIcon size={14} /> },
-  { to: "/admin", label: "Admin", icon: <ActivityIcon size={14} /> }
+  { to: "/spaces", label: uiTerms.nav.spaces, icon: <BuildingIcon size={14} /> },
+  {
+    to: "/reservations",
+    label: uiTerms.nav.reservations,
+    icon: <CalendarIcon size={14} />
+  },
+  { to: "/admin", label: uiTerms.nav.admin, icon: <ActivityIcon size={14} /> }
 ];
 
 export const RootLayout = () => {
@@ -26,7 +31,7 @@ export const RootLayout = () => {
           <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center">
             <NavLink
               to="/"
-              aria-label="Go to home"
+              aria-label={uiTerms.a11y.goHome}
               className="group flex min-w-0 items-center gap-3 md:py-4"
             >
               <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 via-brand-600 to-brand-800 text-white shadow-lg shadow-brand-700/25 ring-1 ring-white/70 transition duration-200 group-hover:-translate-y-0.5">
@@ -37,13 +42,13 @@ export const RootLayout = () => {
                   Darient Workspace Reservations
                 </p>
                 <p className="text-xs font-medium text-slate-500">
-                  Operations console
+                  {uiTerms.appSubtitle}
                 </p>
               </div>
             </NavLink>
 
             <nav
-              aria-label="Primary"
+              aria-label={uiTerms.a11y.primaryNavigation}
               className="-mx-1 flex min-w-0 gap-1 overflow-x-auto pb-1 text-sm hide-scrollbar md:mx-0 md:pb-0"
             >
               {navItems.map((item) => (
@@ -87,7 +92,7 @@ export const RootLayout = () => {
             <IotConnectionBadge status={iotStatus} />
             <NavLink
               to="/help"
-              aria-label="Help"
+              aria-label={uiTerms.nav.help}
               className={({ isActive }) =>
                 cn(
                   "inline-flex h-10 w-10 items-center justify-center rounded-full border text-slate-500 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
@@ -128,7 +133,7 @@ const IotConnectionBadge = ({
             ? "border-amber-200 bg-amber-50 text-amber-700"
             : "border-rose-200 bg-rose-50 text-rose-700"
       )}
-      title={`IoT stream status: ${status}`}
+      title={`Estado del stream IoT: ${status}`}
     >
       <span
         className={cn(
@@ -140,7 +145,7 @@ const IotConnectionBadge = ({
               : "bg-rose-500"
         )}
       />
-      {isConnected ? "IoT connected" : isConnecting ? "IoT connecting" : "IoT offline"}
+      {iotConnectionLabel(isConnected ? "open" : isConnecting ? "connecting" : "closed")}
     </span>
   );
 };

@@ -15,32 +15,30 @@ describe("Modal", () => {
     renderWithProviders(
       <Modal
         isOpen
-        title="Cancel reservation"
-        description="This action changes the reservation status."
+        title="Cancelar reserva"
+        description="Esta acción cambia el estado de la reserva."
         onClose={onClose}
         actions={
           <>
             <Button variant="secondary" onClick={onClose}>
-              Keep reservation
+              Conservar reserva
             </Button>
             <Button variant="danger" onClick={onConfirm}>
-              Confirm cancel
+              Confirmar cancelación
             </Button>
           </>
         }
       >
-        <p>Confirm this reservation change.</p>
+        <p>Confirma este cambio de reserva.</p>
       </Modal>
     );
 
     expect(
-      screen.getByRole("dialog", { name: "Cancel reservation" })
+      screen.getByRole("dialog", { name: "Cancelar reserva" })
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("This action changes the reservation status.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Esta acción cambia el estado de la reserva.")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Confirm cancel" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar cancelación" }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
 
     await user.keyboard("{Escape}");

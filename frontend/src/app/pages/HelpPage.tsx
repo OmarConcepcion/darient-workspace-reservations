@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 
+import { uiTerms } from "../../shared/i18n";
 import {
   ActivityIcon,
   ArrowRightIcon,
@@ -18,9 +19,9 @@ const swaggerUrl = `${apiBaseUrl.replace(/\/$/, "")}/docs`;
 export const HelpPage = () => (
   <section className="space-y-8">
     <PageHeader
-      eyebrow="Support"
-      title="Help"
-      description="Quick links for the API contract, IoT stream and operational dashboard."
+      eyebrow="Soporte"
+      title="Ayuda"
+      description="Accesos rápidos al contrato de la API, al stream IoT y al dashboard operativo."
       actions={
         <a
           href={swaggerUrl}
@@ -28,7 +29,7 @@ export const HelpPage = () => (
           rel="noreferrer"
           className={buttonClasses("primary", "md")}
         >
-          Open Swagger
+          {uiTerms.actions.openSwagger}
           <ArrowRightIcon size={16} />
         </a>
       }
@@ -37,18 +38,18 @@ export const HelpPage = () => (
     <div className="grid gap-4 lg:grid-cols-3">
       <HelpCard
         icon={<ShieldIcon size={21} />}
-        title="API reference"
-        description="Swagger lists the REST endpoints, request payloads and normalized error responses used by this app."
+        title="Referencia de API"
+        description="Swagger lista los endpoints REST, payloads de request y respuestas de error normalizadas que usa esta aplicación."
       />
       <HelpCard
         icon={<ActivityIcon size={21} />}
-        title="IoT stream"
-        description="The header status reflects the SSE connection used for telemetry, alerts and reported device state."
+        title="Stream IoT"
+        description="El estado del header refleja la conexión SSE usada para telemetría, alertas y estado reportado del dispositivo."
       />
       <HelpCard
         icon={<ZapIcon size={21} />}
         title="Dashboard"
-        description="The admin dashboard shows monitoring snapshots, live chart updates, desired state and alert history."
+        description="El dashboard admin muestra snapshots de monitoreo, actualizaciones en vivo, estado deseado e historial de alertas."
       />
     </div>
 
@@ -59,15 +60,15 @@ export const HelpPage = () => (
             <HelpCircleIcon size={20} />
           </span>
           <div>
-            <h2 className="font-semibold text-slate-950">Need live context?</h2>
+            <h2 className="font-semibold text-slate-950">¿Necesitas contexto en vivo?</h2>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              Start with Swagger for API shape, then open the admin dashboard to
-              inspect telemetry and device-state updates.
+              Empieza con Swagger para revisar la forma de la API y luego abre el
+              dashboard admin para inspeccionar telemetría y actualizaciones del dispositivo.
             </p>
           </div>
         </div>
         <Link to="/admin" className={buttonClasses("secondary", "md")}>
-          Open dashboard
+          {uiTerms.actions.openDashboard}
         </Link>
       </div>
     </Card>

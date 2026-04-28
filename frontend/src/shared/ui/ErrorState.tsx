@@ -1,3 +1,4 @@
+import { uiTerms } from "../i18n";
 import type { ReactNode } from "react";
 
 import { Button } from "./Button";
@@ -11,7 +12,7 @@ type ErrorStateProps = {
 };
 
 export const ErrorState = ({
-  title = "Something went wrong",
+  title = "Ocurrió un problema",
   message,
   onRetry,
   action
@@ -34,7 +35,7 @@ export const ErrorState = ({
         {onRetry ? (
           <Button variant="danger" size="sm" onClick={onRetry}>
             <RefreshIcon size={14} />
-            Retry
+            {uiTerms.actions.retry}
           </Button>
         ) : null}
         {action}

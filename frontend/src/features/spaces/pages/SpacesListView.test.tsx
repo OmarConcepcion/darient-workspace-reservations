@@ -47,8 +47,8 @@ describe("SpacesListView", () => {
 
     expect(await screen.findByText("Sky Room")).toBeInTheDocument();
     expect(screen.getAllByText("Headquarters").length).toBeGreaterThan(0);
-    expect(screen.getByText(/Capacity 8/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /View details/i })).toHaveAttribute(
+    expect(screen.getByText(/Capacidad 8/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Ver detalles/i })).toHaveAttribute(
       "href",
       `/spaces/${SPACE_ID}`
     );
@@ -66,7 +66,7 @@ describe("SpacesListView", () => {
 
     renderWithProviders(<SpacesListView />);
 
-    expect(await screen.findByText("No spaces yet")).toBeInTheDocument();
+    expect(await screen.findByText("No hay oficinas todavía")).toBeInTheDocument();
   });
 
   it("surfaces normalized backend errors", async () => {
@@ -91,6 +91,6 @@ describe("SpacesListView", () => {
     renderWithProviders(<SpacesListView />);
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Spaces service unavailable.");
+    expect(alert).toHaveTextContent("Ocurrió un error interno.");
   });
 });

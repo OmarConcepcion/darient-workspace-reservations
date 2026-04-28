@@ -57,3 +57,10 @@
 - [x] Route-level code splitting via `React.lazy` para reservations y admin dashboard.
 - [x] Phase docs renamed/badged through Phase 05; root README and AI.md refreshed with frontend deliverables.
 - [x] Frontend package exposes `typecheck` for local and root-level validation.
+
+## UI translation
+
+- [x] Visible frontend copy translated to Spanish without renaming variables, routes or payloads.
+- [x] Shared UI glossary introduced for repeated labels, actions and state badges.
+- [x] Known backend errors now render Spanish messages from frontend using `error.code`.
+- [x] Visible date/time formatting now uses fixed locale `es-PA`.

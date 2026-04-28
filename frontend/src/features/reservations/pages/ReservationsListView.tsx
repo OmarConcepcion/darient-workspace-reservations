@@ -4,6 +4,10 @@ import { toast } from "sonner";
 
 import { normalizeApiError } from "../../../shared/api/errors";
 import {
+  reservationStatusLabels,
+  uiTerms
+} from "../../../shared/i18n";
+import {
   Button,
   buttonClasses,
   Card,
@@ -58,7 +62,7 @@ export const ReservationsListView = () => {
     cancelMutation.mutate(reservation.id, {
       onSuccess: () => {
         setPendingCancel(null);
-        toast.success("Reservation cancelled.");
+        toast.success("Reserva cancelada.");
       },
       onError: (error) => toast.error(normalizeApiError(error).message)
     });
@@ -68,7 +72,7 @@ export const ReservationsListView = () => {
     deleteMutation.mutate(reservation.id, {
       onSuccess: () => {
         setPendingDelete(null);
-        toast.success("Reservation deleted.");
+        toast.success("Reserva eliminada.");
       },
       onError: (error) => toast.error(normalizeApiError(error).message)
     });
@@ -103,16 +107,16 @@ export const ReservationsListView = () => {
   return (
     <section className="space-y-8">
       <PageHeader
-        eyebrow="Bookings"
-        title="Reservations"
-        description="View and manage all workspace reservations across your organization."
+        eyebrow="Reservas"
+        title="Reservas"
+        description="Consulta y gestiona todas las reservas de oficinas en tu organización."
         actions={
           <Link
             to="/reservations/new"
             className={buttonClasses("primary", "md")}
           >
             <PlusIcon size={16} />
-            New reservation
+            {uiTerms.actions.newReservation}
           </Link>
         }
       />
@@ -125,7 +129,7 @@ export const ReservationsListView = () => {
             </span>
             <input
               type="text"
-              placeholder="Search by customer or space..."
+              placeholder="Buscar por cliente u oficina..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-800 shadow-sm shadow-slate-900/[0.02] placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100"
@@ -133,11 +137,11 @@ export const ReservationsListView = () => {
           </div>
 
           <FilterSelect
-            label="Space"
+            label="Oficina"
             value={spaceFilter}
             onChange={setSpaceFilter}
           >
-            <option value="all">All spaces</option>
+            <option value="all">Todas las oficinas</option>
             {(spacesQuery.data ?? []).map((space) => (
               <option key={space.id} value={space.id}>
                 {space.name}
@@ -146,7 +150,7 @@ export const ReservationsListView = () => {
           </FilterSelect>
 
           <FilterSelect
-            label="Status"
+            label="Estado"
             value={statusFilter}
             onChange={(value) =>
               setStatusFilter(value as (typeof STATUS_OPTIONS)[number])
@@ -154,7 +158,9 @@ export const ReservationsListView = () => {
           >
             {STATUS_OPTIONS.map((status) => (
               <option key={status} value={status}>
-                {status === "all" ? "All statuses" : status}
+                {status === "all"
+                  ? "Todos los estados"
+                  : reservationStatusLabels[status]}
               </option>
             ))}
           </FilterSelect>
@@ -166,7 +172,7 @@ export const ReservationsListView = () => {
             disabled={!hasActiveFilters}
           >
             <RefreshIcon size={15} />
-            Reset
+            {uiTerms.actions.reset}
           </Button>
         </div>
       </Card>
@@ -175,37 +181,37 @@ export const ReservationsListView = () => {
         <Skeleton
           className="h-72"
           aria-busy="true"
-          aria-label="Loading reservations"
+          aria-label={uiTerms.a11y.loadingReservation}
         />
       ) : reservationsQuery.isError ? (
         <ErrorState
-          title="We couldn’t load reservations"
+          title="No pudimos cargar las reservas"
           message={normalizeApiError(reservationsQuery.error).message}
           onRetry={() => reservationsQuery.refetch()}
         />
       ) : reservations.length === 0 ? (
         <EmptyState
           icon={<CalendarIcon size={20} />}
-          title="No reservations yet"
-          description="Create your first reservation to see it listed here."
+          title="No hay reservas todavía"
+          description="Crea tu primera reserva para verla listada aquí."
           action={
             <Link
               to="/reservations/new"
               className={buttonClasses("primary", "md")}
             >
               <PlusIcon size={16} />
-              New reservation
+              {uiTerms.actions.newReservation}
             </Link>
           }
         />
       ) : filteredReservations.length === 0 ? (
         <EmptyState
           icon={<SearchIcon size={20} />}
-          title="No reservations match your filters"
-          description="Try changing the search, space, or status filter."
+          title="No hay reservas que coincidan con tus filtros"
+          description="Prueba cambiando la búsqueda, la oficina o el estado."
           action={
             <Button variant="secondary" size="sm" onClick={resetFilters}>
-              Reset filters
+              {uiTerms.actions.reset}
             </Button>
           }
         />
@@ -216,19 +222,19 @@ export const ReservationsListView = () => {
               <thead className="bg-slate-50/70 text-left text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                 <tr>
                   <th scope="col" className="px-6 py-4">
-                    Customer
+                    Cliente
                   </th>
                   <th scope="col" className="px-6 py-4">
-                    Space
+                    Oficina
                   </th>
                   <th scope="col" className="px-6 py-4">
-                    Window
+                    Rango
                   </th>
                   <th scope="col" className="px-6 py-4">
-                    Status
+                    Estado
                   </th>
                   <th scope="col" className="px-6 py-4 text-right">
-                    Action
+                    Acción
                   </th>
                 </tr>
               </thead>
@@ -252,7 +258,7 @@ export const ReservationsListView = () => {
                           >
                             {reservation.customerEmail}
                           </Link>
-                          <p className="text-xs text-slate-500">Customer</p>
+                          <p className="text-xs text-slate-500">Cliente</p>
                         </div>
                       </div>
                     </td>
@@ -284,8 +290,8 @@ export const ReservationsListView = () => {
                         >
                           {cancelMutation.isPending &&
                           cancelMutation.variables === reservation.id
-                            ? "Cancelling…"
-                            : "Cancel"}
+                            ? "Cancelando…"
+                            : uiTerms.actions.cancel}
                         </Button>
                         ) : null}
                         {reservation.status === "CANCELLED" ? (
@@ -301,8 +307,8 @@ export const ReservationsListView = () => {
                             <TrashIcon size={14} />
                             {deleteMutation.isPending &&
                             deleteMutation.variables === reservation.id
-                              ? "Deleting..."
-                              : "Delete"}
+                              ? "Eliminando..."
+                              : uiTerms.actions.delete}
                           </Button>
                         ) : null}
                       </div>
@@ -317,11 +323,11 @@ export const ReservationsListView = () => {
 
       {total > PAGE_SIZE ? (
         <nav
-          aria-label="Reservations pagination"
+          aria-label={uiTerms.a11y.reservationsPagination}
           className="flex flex-col gap-3 rounded-3xl border border-slate-200/80 bg-white/75 p-4 text-sm text-slate-600 shadow-sm sm:flex-row sm:items-center sm:justify-between"
         >
           <p>
-            Page {page} of {totalPages} · {total} total
+            Página {page} de {totalPages} · {total} en total
           </p>
           <div className="flex gap-2">
             <Button
@@ -330,7 +336,7 @@ export const ReservationsListView = () => {
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               disabled={page === 1}
             >
-              Previous
+              {uiTerms.actions.previous}
             </Button>
             <Button
               variant="secondary"
@@ -340,7 +346,7 @@ export const ReservationsListView = () => {
               }
               disabled={page >= totalPages}
             >
-              Next
+              {uiTerms.actions.next}
             </Button>
           </div>
         </nav>
@@ -348,20 +354,20 @@ export const ReservationsListView = () => {
 
       <Modal
         isOpen={pendingCancel !== null}
-        title="Cancel reservation"
-        description="This will mark the reservation as cancelled. You can delete it after cancellation if you no longer need the record."
+        title={uiTerms.actions.cancelReservation}
+        description="Esto marcará la reserva como cancelada. Podrás eliminarla después si ya no necesitas el registro."
         onClose={() => setPendingCancel(null)}
         actions={
           <>
             <Button variant="secondary" onClick={() => setPendingCancel(null)}>
-              Keep reservation
+              {uiTerms.actions.keepReservation}
             </Button>
             <Button
               variant="danger"
               onClick={() => pendingCancel && handleCancel(pendingCancel)}
               disabled={cancelMutation.isPending}
             >
-              Confirm cancel
+              {uiTerms.actions.confirmCancel}
             </Button>
           </>
         }
@@ -369,20 +375,20 @@ export const ReservationsListView = () => {
 
       <Modal
         isOpen={pendingDelete !== null}
-        title="Delete reservation"
-        description="This permanently removes the cancelled reservation from the system."
+        title={uiTerms.actions.deleteReservation}
+        description="Esto elimina permanentemente la reserva cancelada del sistema."
         onClose={() => setPendingDelete(null)}
         actions={
           <>
             <Button variant="secondary" onClick={() => setPendingDelete(null)}>
-              Keep record
+              {uiTerms.actions.keepRecord}
             </Button>
             <Button
               variant="danger"
               onClick={() => pendingDelete && handleDelete(pendingDelete)}
               disabled={deleteMutation.isPending}
             >
-              Confirm delete
+              {uiTerms.actions.confirmDelete}
             </Button>
           </>
         }

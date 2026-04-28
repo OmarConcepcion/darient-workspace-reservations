@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -36,20 +36,19 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByText("Darient Workspace Reservations")).toBeInTheDocument();
-    expect(screen.getByText("Operations console")).toBeInTheDocument();
-    expect(screen.getByTitle(/IoT stream status/i)).toBeInTheDocument();
+    expect(screen.getByText("Consola de operaciones")).toBeInTheDocument();
+    expect(screen.getByTitle(/Estado del stream IoT/i)).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: /smart workspace reservations/i
+        name: /Reservas inteligentes/i
       })
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Spaces" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Reservations" })
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Admin" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /help/i })).toHaveAttribute(
+    const nav = screen.getByRole("navigation", { name: "Navegación principal" });
+    expect(within(nav).getByRole("link", { name: "Oficinas" })).toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: "Reservas" })).toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: "Admin" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /ayuda/i })).toHaveAttribute(
       "href",
       "/help"
     );
@@ -67,12 +66,12 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("link", { name: /help/i }));
+    await user.click(screen.getByRole("link", { name: /ayuda/i }));
 
     expect(
-      await screen.findByRole("heading", { name: "Help" })
+      await screen.findByRole("heading", { name: "Ayuda" })
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /open swagger/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /abrir swagger/i })).toHaveAttribute(
       "href",
       "http://localhost:3000/api/v1/docs"
     );

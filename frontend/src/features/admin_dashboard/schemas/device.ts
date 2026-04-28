@@ -48,14 +48,14 @@ export type DeviceReported = z.output<typeof deviceReportedSchema>;
 export const deviceDesiredFormSchema = z.object({
   sampling_interval_sec: z.coerce
     .number()
-    .int("Must be an integer")
-    .positive("Must be greater than 0")
-    .max(3600, "Must be at most 3600 seconds"),
+    .int("Debe ser un número entero")
+    .positive("Debe ser mayor que 0")
+    .max(3600, "Debe ser como máximo 3600 segundos"),
   co2_alert_threshold: z.coerce
     .number()
-    .int("Must be an integer")
-    .positive("Must be greater than 0")
-    .max(10000, "Must be at most 10000 ppm")
+    .int("Debe ser un número entero")
+    .positive("Debe ser mayor que 0")
+    .max(10000, "Debe ser como máximo 10000 ppm")
 });
 
 export type DeviceDesiredFormValues = z.input<typeof deviceDesiredFormSchema>;

@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { normalizeApiError } from "../../../shared/api/errors";
+import { uiTerms } from "../../../shared/i18n";
 import {
   AlertCircleIcon,
   Button,
@@ -118,7 +119,7 @@ export const NewReservationView = () => {
       {
         onSuccess: () => {
           setSubmitError(null);
-          toast.success("Reservation created.");
+          toast.success("Reserva creada.");
           navigate("/reservations");
         },
         onError: (error) => {
@@ -141,13 +142,13 @@ export const NewReservationView = () => {
         className="inline-flex min-h-11 items-center gap-2 rounded-2xl px-1 text-sm font-semibold text-slate-500 transition hover:text-brand-700"
       >
         <ChevronLeftIcon size={16} />
-        Back to reservations
+        Volver a reservas
       </Link>
 
       <PageHeader
-        eyebrow="New booking"
-        title="Create reservation"
-        description="Pick a place and space, then choose one day and the hourly range for your reservation."
+        eyebrow="Nueva reserva"
+        title="Crear reserva"
+        description="Selecciona un lugar y una oficina, luego elige un día y el rango horario para tu reserva."
       />
 
       <motion.div
@@ -160,15 +161,19 @@ export const NewReservationView = () => {
             <div className="grid lg:grid-cols-2">
               <FormSection
                 icon={<CalendarIcon size={21} />}
-                title="Where"
-                description="Select the location and space for your reservation."
+                title="Dónde"
+                description="Selecciona el lugar y la oficina para tu reserva."
               >
                 <div className="grid gap-5">
                   <Field
                     id="place_id"
-                    label="Place"
+                    label="Lugar"
                     error={errors.place_id?.message}
-                    hint={placesQuery.isLoading ? "Loading places..." : "Choose the location where your reservation will take place."}
+                    hint={
+                      placesQuery.isLoading
+                        ? "Cargando lugares..."
+                        : "Elige el lugar donde se realizará tu reserva."
+                    }
                   >
                     <select
                       id="place_id"
@@ -176,7 +181,7 @@ export const NewReservationView = () => {
                       disabled={placesQuery.isLoading || placesQuery.isError}
                       className={inputStyles(Boolean(errors.place_id))}
                     >
-                      <option value="">Select a place</option>
+                      <option value="">Selecciona un lugar</option>
                       {(placesQuery.data ?? []).map((place) => (
                         <option key={place.id} value={place.id}>
                           {place.name}
@@ -187,14 +192,14 @@ export const NewReservationView = () => {
 
                   <Field
                     id="space_id"
-                    label="Space"
+                    label="Oficina"
                     error={errors.space_id?.message}
                     hint={
                       !selectedPlaceId
-                        ? "Pick a place first"
+                        ? "Primero selecciona un lugar"
                         : spacesForPlace.length === 0
-                          ? "No spaces in this place"
-                          : "Pick a specific space. Capacity is shown in the option."
+                          ? "No hay oficinas en este lugar"
+                          : "Selecciona una oficina específica. La capacidad se muestra en la opción."
                     }
                   >
                     <select
@@ -203,10 +208,10 @@ export const NewReservationView = () => {
                       disabled={!selectedPlaceId || spacesForPlace.length === 0}
                       className={inputStyles(Boolean(errors.space_id))}
                     >
-                      <option value="">Select a space</option>
+                      <option value="">Selecciona una oficina</option>
                       {spacesForPlace.map((space) => (
                         <option key={space.id} value={space.id}>
-                          {space.name} (cap {space.capacity})
+                          {space.name} (cap. {space.capacity})
                         </option>
                       ))}
                     </select>
@@ -216,15 +221,15 @@ export const NewReservationView = () => {
 
               <FormSection
                 icon={<MailIcon size={21} />}
-                title="Who"
-                description="Provide the primary contact for this reservation."
+                title="Quién"
+                description="Indica el contacto principal de esta reserva."
                 className="border-t border-slate-200/80 lg:border-l lg:border-t-0"
               >
                 <Field
                   id="customer_email"
-                  label="Customer email"
+                  label="Correo del cliente"
                   error={errors.customer_email?.message}
-                  hint="We'll use this email to identify the booking."
+                  hint="Usaremos este correo para identificar la reserva."
                 >
                   <input
                     id="customer_email"
@@ -244,9 +249,9 @@ export const NewReservationView = () => {
                   <CalendarIcon size={21} />
                 </span>
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-950">When</h2>
+                  <h2 className="text-lg font-semibold text-slate-950">Cuándo</h2>
                   <p className="text-sm text-slate-500">
-                    Choose a reservation date, then define the start and end hour inside that same day.
+                    Elige la fecha de la reserva y luego define la hora de inicio y fin dentro de ese mismo día.
                   </p>
                 </div>
               </div>
@@ -254,9 +259,9 @@ export const NewReservationView = () => {
               <div className="grid gap-5 lg:grid-cols-3">
                 <Field
                   id="reservation_date"
-                  label="Reservation date"
+                  label="Fecha de la reserva"
                   error={errors.reservation_date?.message}
-                  hint="This day will be used for both the start and end timestamps."
+                  hint="Este día se usará tanto para el inicio como para el fin."
                 >
                   <input
                     id="reservation_date"
@@ -268,9 +273,9 @@ export const NewReservationView = () => {
                 </Field>
                 <Field
                   id="start_time"
-                  label="Start time"
+                  label="Hora de inicio"
                   error={errors.start_time?.message}
-                  hint="Pick the hour when the reservation should begin."
+                  hint="Elige la hora en que debe comenzar la reserva."
                 >
                   <input
                     id="start_time"
@@ -283,9 +288,9 @@ export const NewReservationView = () => {
                 </Field>
                 <Field
                   id="end_time"
-                  label="End time"
+                  label="Hora de finalización"
                   error={errors.end_time?.message}
-                  hint="Pick the hour when the reservation should finish."
+                  hint="Elige la hora en que debe terminar la reserva."
                 >
                   <input
                     id="end_time"
@@ -324,12 +329,12 @@ export const NewReservationView = () => {
                 >
                   <AlertCircleIcon size={20} className="mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold">Cannot create reservation</p>
+                    <p className="font-semibold">No se pudo crear la reserva</p>
                     <p className="mt-1">{submitError}</p>
                     {availableWindows.length > 0 ? (
                       <div className="mt-4 border-t border-rose-200 pt-4">
                         <p className="font-semibold text-rose-900">
-                          Available today for this space
+                          Disponible hoy para esta oficina
                         </p>
                         <ul className="mt-2 space-y-1">
                           {availableWindows.map((window) => (
@@ -341,7 +346,7 @@ export const NewReservationView = () => {
                       </div>
                     ) : createMutation.isError ? (
                       <p className="mt-3 font-medium text-rose-900">
-                        No available windows remain for this space on the selected day.
+                        No quedan ventanas disponibles para esta oficina en el día seleccionado.
                       </p>
                     ) : null}
                   </div>
@@ -351,10 +356,10 @@ export const NewReservationView = () => {
 
             <div className="flex flex-col gap-3 border-t border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-end sm:p-8">
               <Link to="/reservations" className={buttonClasses("secondary", "md")}>
-                Cancel
+                {uiTerms.actions.cancel}
               </Link>
               <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Creating..." : "Create reservation"}
+                {createMutation.isPending ? "Creando..." : uiTerms.actions.createReservation}
               </Button>
             </div>
           </form>

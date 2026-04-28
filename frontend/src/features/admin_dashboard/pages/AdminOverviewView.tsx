@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 
+import { uiTerms } from "../../../shared/i18n";
 import { normalizeApiError } from "../../../shared/api/errors";
 import {
   ActivityIcon,
@@ -40,35 +41,35 @@ export const AdminOverviewView = () => {
       <Card className="p-5 sm:p-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-slate-200/80">
           <SummaryMetric
-            label="Live telemetry"
+            label="Telemetría en vivo"
             value={spacesQuery.isLoading ? "—" : String(spaces.length)}
-            hint="Spaces online"
+            hint="Oficinas en línea"
             icon={<ActivityIcon size={22} />}
             tone="brand"
           />
           <SummaryMetric
-            label="Total spaces"
+            label="Total de oficinas"
             value={spacesQuery.isLoading ? "—" : String(spaces.length)}
-            hint="Configured workspaces"
+            hint="Oficinas configuradas"
             icon={<BuildingIcon size={22} />}
             tone="brand"
           />
           <SummaryMetric
-            label="Total capacity"
+            label="Capacidad total"
             value={spacesQuery.isLoading ? "—" : String(totalCapacity)}
-            hint={`Across ${spaces.length} space${spaces.length !== 1 ? "s" : ""}`}
+            hint={`En ${spaces.length} ${spaces.length === 1 ? "oficina" : "oficinas"}`}
             icon={<UsersIcon size={22} />}
             tone="success"
           />
           <SummaryMetric
-            label="Total reservations"
+            label="Total de reservas"
             value={reservationsQuery.isLoading ? "—" : String(totalReservations)}
             hint={
               <Link
                 to="/reservations"
                 className="inline-flex items-center gap-1 text-brand-700 hover:underline"
               >
-                View reservations <ArrowRightIcon size={11} />
+                Ver reservas <ArrowRightIcon size={11} />
               </Link>
             }
             icon={<CalendarIcon size={22} />}
@@ -78,9 +79,9 @@ export const AdminOverviewView = () => {
       </Card>
 
       <PageHeader
-        eyebrow="Operations"
-        title="Admin dashboard"
-        description="Pick a space to see its live telemetry, alerts and device controls."
+        eyebrow="Operaciones"
+        title="Dashboard admin"
+        description="Elige una oficina para revisar telemetría en vivo, alertas y controles del dispositivo."
       />
 
       {spacesQuery.isLoading ? (
@@ -91,15 +92,15 @@ export const AdminOverviewView = () => {
         </div>
       ) : spacesQuery.isError ? (
         <ErrorState
-          title="We couldn’t load spaces"
+          title="No pudimos cargar las oficinas"
           message={normalizeApiError(spacesQuery.error).message}
           onRetry={() => spacesQuery.refetch()}
         />
       ) : (spacesQuery.data ?? []).length === 0 ? (
         <EmptyState
           icon={<ActivityIcon size={20} />}
-          title="No spaces to monitor"
-          description="Create a space first, then come back to wire up telemetry and alerts."
+          title="No hay oficinas para monitorear"
+          description="Crea primero una oficina y luego vuelve para conectar telemetría y alertas."
         />
       ) : (
         <div className="grid gap-5 xl:grid-cols-2">
@@ -133,13 +134,13 @@ export const AdminOverviewView = () => {
                               {space.name}
                             </h3>
                             <p className="mt-1 truncate text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
-                              {place?.name ?? "Unknown place"}
+                              {place?.name ?? "Lugar desconocido"}
                             </p>
                           </div>
                         </div>
                         <Badge tone="brand">
                           <UsersIcon size={12} />
-                          Capacity {space.capacity}
+                          Capacidad {space.capacity}
                         </Badge>
                         </header>
 
@@ -168,7 +169,7 @@ export const AdminOverviewView = () => {
                             "px-4"
                           )}
                         >
-                          Open dashboard
+                          {uiTerms.actions.openDashboard}
                           <ArrowRightIcon
                             size={14}
                             className="transition group-hover:translate-x-0.5"

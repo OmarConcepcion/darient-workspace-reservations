@@ -4,6 +4,12 @@ import { Link } from "react-router-dom";
 import { useReservations } from "../../features/reservations";
 import { useSpaces } from "../../features/spaces";
 import {
+  pluralizeSpanish,
+  reservationStatusLabels,
+  uiTerms,
+  formatUiDateTime
+} from "../../shared/i18n";
+import {
   ActivityIcon,
   ArrowRightIcon,
   BarChartIcon,
@@ -20,27 +26,27 @@ import {
 const quickActions = [
   {
     to: "/spaces",
-    title: "Browse spaces",
+    title: "Explorar oficinas",
     description:
-      "Explore every bookable workspace with capacity, location and IoT mapping.",
+      "Explora cada oficina reservable con capacidad, ubicación y mapeo IoT.",
     icon: <BuildingIcon size={22} />,
     accent: "from-brand-500/10 via-brand-100/60 to-transparent",
     line: "border-brand-200/80"
   },
   {
     to: "/reservations",
-    title: "Manage reservations",
+    title: "Gestionar reservas",
     description:
-      "Create, view and cancel bookings across every configured workspace.",
+      "Crea, consulta y cancela reservas en todas las oficinas configuradas.",
     icon: <CalendarIcon size={22} />,
     accent: "from-emerald-500/10 via-emerald-100/60 to-transparent",
     line: "border-emerald-200/80"
   },
   {
     to: "/admin",
-    title: "Admin dashboard",
+    title: "Dashboard admin",
     description:
-      "Monitor live telemetry, device state and operational alerts in one view.",
+      "Monitorea telemetría en vivo, estado del dispositivo y alertas operativas en una sola vista.",
     icon: <ShieldIcon size={22} />,
     accent: "from-orange-500/10 via-orange-100/60 to-transparent",
     line: "border-orange-200/80"
@@ -83,17 +89,17 @@ export const HomePage = () => {
           <div className="max-w-2xl space-y-6">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 shadow-sm">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Live · IoT enabled
+              En vivo · IoT habilitado
             </span>
 
             <div className="space-y-5">
               <h1 className="text-5xl font-semibold tracking-[-0.045em] text-slate-950 sm:text-6xl xl:text-7xl">
-                Smart workspace reservations with live IoT visibility
+                Reservas inteligentes de espacios de trabajo con visibilidad IoT en vivo
               </h1>
               <p className="max-w-xl text-lg leading-8 text-slate-600">
-                Reserve offices and desks, monitor real-time occupancy and
-                environmental data, and keep every site in sync from a calm
-                operations console.
+                Reserva oficinas y escritorios, monitorea ocupación y datos
+                ambientales en tiempo real, y mantén cada sede sincronizada desde
+                una consola de operaciones clara.
               </p>
             </div>
 
@@ -102,12 +108,12 @@ export const HomePage = () => {
                 to="/reservations/new"
                 className={buttonClasses("primary", "md", "sm:w-auto")}
               >
-                Create reservation
+                {uiTerms.actions.createReservation}
                 <ArrowRightIcon size={17} />
               </Link>
               <Link to="/spaces" className={buttonClasses("secondary", "md")}>
                 <BuildingIcon size={17} />
-                Browse spaces
+                {uiTerms.nav.spaces}
               </Link>
             </div>
           </div>
@@ -126,10 +132,10 @@ export const HomePage = () => {
       <section className="space-y-5">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">
-            Quick access
+            Acceso rápido
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-            What would you like to do?
+            ¿Qué quieres hacer?
           </h2>
         </div>
 
@@ -169,7 +175,7 @@ export const HomePage = () => {
                       </div>
                     </div>
                     <span className="inline-flex items-center gap-2 text-sm font-bold text-brand-700">
-                      Open
+                      {uiTerms.actions.open}
                       <ArrowRightIcon
                         size={15}
                         className="transition group-hover:translate-x-1"
@@ -213,25 +219,25 @@ const HeroDashboard = ({
       <Card className="p-5">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-950">
-            Live overview
+            Resumen en vivo
           </h2>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            Live
+            En vivo
           </span>
         </div>
         <div className="grid divide-y divide-slate-100 rounded-2xl border border-slate-200/80 bg-white/70 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
           <MetricTile
             icon={<ActivityIcon size={18} />}
-            label="Workspaces"
+            label="Oficinas"
             value={isLoading ? "—" : String(spacesCount)}
-            hint={`${totalCapacity} total seats`}
+            hint={`${totalCapacity} puestos en total`}
           />
           <MetricTile
             icon={<UsersIcon size={18} />}
-            label="Avg capacity"
+            label="Capacidad prom."
             value={isLoading ? "—" : String(averageCapacity)}
-            hint="Seats per workspace"
+            hint="Puestos por oficina"
           />
         </div>
       </Card>
@@ -239,16 +245,16 @@ const HeroDashboard = ({
       <div className="grid gap-5 sm:grid-cols-2">
         <MiniMetricCard
           icon={<ThermometerIcon size={18} />}
-          label="Environment"
-          value="IoT ready"
-          hint="Telemetry pipeline active"
+          label="Ambiente"
+          value="IoT listo"
+          hint="Pipeline de telemetría activo"
           lineColor="#4f46e5"
         />
         <MiniMetricCard
           icon={<ZapIcon size={18} />}
-          label="Bookings"
+          label="Reservas"
           value={isLoading ? "—" : String(totalReservations)}
-          hint="Across all spaces"
+          hint="En todas las oficinas"
           lineColor="#0ea5e9"
         />
       </div>
@@ -260,7 +266,7 @@ const HeroDashboard = ({
           <CalendarIcon size={18} />
         </span>
         <h2 className="text-sm font-semibold text-slate-950">
-          Upcoming reservations
+          Próximas reservas
         </h2>
       </div>
       {isLoading ? (
@@ -271,7 +277,7 @@ const HeroDashboard = ({
         </div>
       ) : reservations.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-8 text-sm text-slate-500">
-          No reservations yet.
+          No hay reservas todavía.
         </div>
       ) : (
         <ul className="space-y-3">
@@ -287,7 +293,7 @@ const HeroDashboard = ({
                 {reservation.customerEmail}
               </p>
               <span className="mt-3 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
-                {reservation.status}
+                {reservationStatusLabels[reservation.status as keyof typeof reservationStatusLabels]}
               </span>
             </li>
           ))}
@@ -297,7 +303,7 @@ const HeroDashboard = ({
         to="/reservations"
         className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-brand-700"
       >
-        View all reservations
+        Ver todas las reservas
         <ArrowRightIcon size={15} />
       </Link>
     </Card>
@@ -371,7 +377,7 @@ const MiniSparkline = ({ color }: { color: string }) => (
 );
 
 const formatReservationDate = (iso: string): string =>
-  new Date(iso).toLocaleString([], {
+  formatUiDateTime(iso, {
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit"

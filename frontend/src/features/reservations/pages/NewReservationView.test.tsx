@@ -170,7 +170,7 @@ const renderForm = () =>
       <Route path="/reservations/new" element={<NewReservationView />} />
       <Route
         path="/reservations"
-        element={<div data-testid="list-page">reservations list</div>}
+        element={<div data-testid="list-page">lista de reservas</div>}
       />
     </Routes>,
     { router: { initialEntries: ["/reservations/new"] } }
@@ -198,9 +198,9 @@ describe("NewReservationView", () => {
       ).toBeInTheDocument()
     );
 
-    await user.click(screen.getByLabelText("Reservation date"));
-    await user.click(screen.getByLabelText("Start time"));
-    await user.click(screen.getByLabelText("End time"));
+    await user.click(screen.getByLabelText("Fecha de la reserva"));
+    await user.click(screen.getByLabelText("Hora de inicio"));
+    await user.click(screen.getByLabelText("Hora de finalización"));
 
     expect(showPicker).toHaveBeenCalledTimes(3);
 
@@ -227,15 +227,15 @@ describe("NewReservationView", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "Create reservation" })
+      screen.getByRole("button", { name: "Crear reserva" })
     );
 
-    expect(await screen.findByText("A place is required")).toBeInTheDocument();
-    expect(screen.getByText("A space is required")).toBeInTheDocument();
-    expect(screen.getByText("Enter a valid email")).toBeInTheDocument();
-    expect(screen.getByText("Reservation date is required")).toBeInTheDocument();
-    expect(screen.getByText("Start time is required")).toBeInTheDocument();
-    expect(screen.getByText("End time is required")).toBeInTheDocument();
+    expect(await screen.findByText("Debes seleccionar un lugar")).toBeInTheDocument();
+    expect(screen.getByText("Debes seleccionar una oficina")).toBeInTheDocument();
+    expect(screen.getByText("Ingresa un correo válido")).toBeInTheDocument();
+    expect(screen.getByText("La fecha de la reserva es obligatoria")).toBeInTheDocument();
+    expect(screen.getByText("La hora de inicio es obligatoria")).toBeInTheDocument();
+    expect(screen.getByText("La hora de finalización es obligatoria")).toBeInTheDocument();
     expect(toastSuccess).not.toHaveBeenCalled();
   });
 
@@ -249,22 +249,24 @@ describe("NewReservationView", () => {
       ).toBeInTheDocument()
     );
 
-    await user.selectOptions(screen.getByLabelText("Place"), PLACE_ID);
-    await user.selectOptions(screen.getByLabelText("Space"), SPACE_ID);
+    await user.selectOptions(screen.getByLabelText("Lugar"), PLACE_ID);
+    await user.selectOptions(screen.getByLabelText("Oficina"), SPACE_ID);
     await user.type(
-      screen.getByLabelText("Customer email"),
+      screen.getByLabelText("Correo del cliente"),
       "alice@example.com"
     );
-    await user.type(screen.getByLabelText("Reservation date"), "2026-05-01");
-    await user.type(screen.getByLabelText("Start time"), "10:00");
-    await user.type(screen.getByLabelText("End time"), "09:00");
+    await user.type(screen.getByLabelText("Fecha de la reserva"), "2026-05-01");
+    await user.type(screen.getByLabelText("Hora de inicio"), "10:00");
+    await user.type(screen.getByLabelText("Hora de finalización"), "09:00");
 
     await user.click(
-      screen.getByRole("button", { name: "Create reservation" })
+      screen.getByRole("button", { name: "Crear reserva" })
     );
 
     expect(
-      await screen.findByText("End must be after start")
+      await screen.findByText(
+        "La hora de finalización debe ser posterior a la hora de inicio"
+      )
     ).toBeInTheDocument();
   });
 
@@ -304,23 +306,21 @@ describe("NewReservationView", () => {
       ).toBeInTheDocument()
     );
 
-    await user.selectOptions(screen.getByLabelText("Place"), PLACE_ID);
-    await user.selectOptions(screen.getByLabelText("Space"), SPACE_ID);
+    await user.selectOptions(screen.getByLabelText("Lugar"), PLACE_ID);
+    await user.selectOptions(screen.getByLabelText("Oficina"), SPACE_ID);
     await user.type(
-      screen.getByLabelText("Customer email"),
+      screen.getByLabelText("Correo del cliente"),
       "alice@example.com"
     );
-    await user.type(screen.getByLabelText("Reservation date"), "2026-05-01");
-    await user.type(screen.getByLabelText("Start time"), "10:00");
-    await user.type(screen.getByLabelText("End time"), "11:00");
+    await user.type(screen.getByLabelText("Fecha de la reserva"), "2026-05-01");
+    await user.type(screen.getByLabelText("Hora de inicio"), "10:00");
+    await user.type(screen.getByLabelText("Hora de finalización"), "11:00");
 
     await user.click(
-      screen.getByRole("button", { name: "Create reservation" })
+      screen.getByRole("button", { name: "Crear reserva" })
     );
 
-    await waitFor(() =>
-      expect(toastSuccess).toHaveBeenCalledWith("Reservation created.")
-    );
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Reserva creada."));
     expect(await screen.findByTestId("list-page")).toBeInTheDocument();
     expect(createBody).toMatchObject({
       place_id: PLACE_ID,
@@ -366,25 +366,27 @@ describe("NewReservationView", () => {
       ).toBeInTheDocument()
     );
 
-    await user.selectOptions(screen.getByLabelText("Place"), PLACE_ID);
-    await user.selectOptions(screen.getByLabelText("Space"), SPACE_ID);
+    await user.selectOptions(screen.getByLabelText("Lugar"), PLACE_ID);
+    await user.selectOptions(screen.getByLabelText("Oficina"), SPACE_ID);
     await user.type(
-      screen.getByLabelText("Customer email"),
+      screen.getByLabelText("Correo del cliente"),
       "alice@example.com"
     );
-    await user.type(screen.getByLabelText("Reservation date"), "2026-05-01");
-    await user.type(screen.getByLabelText("Start time"), "10:00");
-    await user.type(screen.getByLabelText("End time"), "11:00");
+    await user.type(screen.getByLabelText("Fecha de la reserva"), "2026-05-01");
+    await user.type(screen.getByLabelText("Hora de inicio"), "10:00");
+    await user.type(screen.getByLabelText("Hora de finalización"), "11:00");
 
     await user.click(
-      screen.getByRole("button", { name: "Create reservation" })
+      screen.getByRole("button", { name: "Crear reserva" })
     );
 
     await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith("Time window already booked.")
+      expect(toastError).toHaveBeenCalledWith(
+        "La acción no se pudo completar por un conflicto con el estado actual."
+      )
     );
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Time window already booked."
+      "La acción no se pudo completar por un conflicto con el estado actual."
     );
     expect(toastSuccess).not.toHaveBeenCalled();
     expect(screen.queryByTestId("list-page")).not.toBeInTheDocument();
@@ -426,21 +428,21 @@ describe("NewReservationView", () => {
       ).toBeInTheDocument()
     );
 
-    await user.selectOptions(screen.getByLabelText("Place"), PLACE_ID);
-    await user.selectOptions(screen.getByLabelText("Space"), SPACE_ID);
+    await user.selectOptions(screen.getByLabelText("Lugar"), PLACE_ID);
+    await user.selectOptions(screen.getByLabelText("Oficina"), SPACE_ID);
     await user.type(
-      screen.getByLabelText("Customer email"),
+      screen.getByLabelText("Correo del cliente"),
       "alice@example.com"
     );
-    await user.type(screen.getByLabelText("Reservation date"), "2026-05-01");
-    await user.type(screen.getByLabelText("Start time"), "10:00");
-    await user.type(screen.getByLabelText("End time"), "11:00");
+    await user.type(screen.getByLabelText("Fecha de la reserva"), "2026-05-01");
+    await user.type(screen.getByLabelText("Hora de inicio"), "10:00");
+    await user.type(screen.getByLabelText("Hora de finalización"), "11:00");
     await user.click(
-      screen.getByRole("button", { name: "Create reservation" })
+      screen.getByRole("button", { name: "Crear reserva" })
     );
 
-    expect(await screen.findByText("Available today for this space")).toBeInTheDocument();
-    expect(screen.getAllByText(/May 1, 2026/).length).toBeGreaterThan(0);
+    expect(await screen.findByText("Disponible hoy para esta oficina")).toBeInTheDocument();
+    expect(screen.getAllByText(/mayo/i).length).toBeGreaterThan(0);
   });
 
   it("loads daily availability reference after selecting a space and date", async () => {
@@ -453,13 +455,13 @@ describe("NewReservationView", () => {
       ).toBeInTheDocument()
     );
 
-    await user.selectOptions(screen.getByLabelText("Place"), PLACE_ID);
-    await user.selectOptions(screen.getByLabelText("Space"), SPACE_ID);
-    await user.type(screen.getByLabelText("Reservation date"), "2026-05-01");
+    await user.selectOptions(screen.getByLabelText("Lugar"), PLACE_ID);
+    await user.selectOptions(screen.getByLabelText("Oficina"), SPACE_ID);
+    await user.type(screen.getByLabelText("Fecha de la reserva"), "2026-05-01");
 
-    expect(await screen.findByText("Availability reference")).toBeInTheDocument();
-    expect(screen.getByText("Available")).toBeInTheDocument();
-    expect(screen.getByText("Reserved")).toBeInTheDocument();
+    expect(await screen.findByText("Referencia de disponibilidad")).toBeInTheDocument();
+    expect(screen.getByText("Disponible")).toBeInTheDocument();
+    expect(screen.getByText("Reservado")).toBeInTheDocument();
     const availableWindowLabel = formatLocalWindow(
       "2026-05-01T08:00:00.000Z",
       "2026-05-01T13:00:00.000Z"
@@ -487,13 +489,13 @@ describe("NewReservationView", () => {
       ).toBeInTheDocument()
     );
 
-    await user.selectOptions(screen.getByLabelText("Place"), PLACE_ID);
-    await user.selectOptions(screen.getByLabelText("Space"), SPACE_ID);
-    await user.type(screen.getByLabelText("Reservation date"), "2026-05-01");
-    await user.type(screen.getByLabelText("Start time"), "10:00");
-    await user.type(screen.getByLabelText("End time"), "12:00");
+    await user.selectOptions(screen.getByLabelText("Lugar"), PLACE_ID);
+    await user.selectOptions(screen.getByLabelText("Oficina"), SPACE_ID);
+    await user.type(screen.getByLabelText("Fecha de la reserva"), "2026-05-01");
+    await user.type(screen.getByLabelText("Hora de inicio"), "10:00");
+    await user.type(screen.getByLabelText("Hora de finalización"), "12:00");
 
-    expect(await screen.findByText("Selected range")).toBeInTheDocument();
+    expect(await screen.findByText("Rango seleccionado")).toBeInTheDocument();
     expect(screen.getByText("10:00 - 12:00")).toBeInTheDocument();
   });
 
@@ -507,18 +509,18 @@ describe("NewReservationView", () => {
       ).toBeInTheDocument()
     );
 
-    await user.selectOptions(screen.getByLabelText("Place"), PLACE_ID);
-    await user.selectOptions(screen.getByLabelText("Space"), SPACE_ID);
-    await user.type(screen.getByLabelText("Reservation date"), "2026-05-01");
-    await user.type(screen.getByLabelText("Start time"), "10:00");
-    await user.type(screen.getByLabelText("End time"), "12:00");
+    await user.selectOptions(screen.getByLabelText("Lugar"), PLACE_ID);
+    await user.selectOptions(screen.getByLabelText("Oficina"), SPACE_ID);
+    await user.type(screen.getByLabelText("Fecha de la reserva"), "2026-05-01");
+    await user.type(screen.getByLabelText("Hora de inicio"), "10:00");
+    await user.type(screen.getByLabelText("Hora de finalización"), "12:00");
 
-    await user.selectOptions(screen.getByLabelText("Place"), SECOND_PLACE_ID);
+    await user.selectOptions(screen.getByLabelText("Lugar"), SECOND_PLACE_ID);
 
-    expect(screen.getByLabelText("Space")).toHaveValue("");
-    expect(screen.getByLabelText("Reservation date")).toHaveValue("");
-    expect(screen.getByLabelText("Start time")).toHaveValue("");
-    expect(screen.getByLabelText("End time")).toHaveValue("");
+    expect(screen.getByLabelText("Oficina")).toHaveValue("");
+    expect(screen.getByLabelText("Fecha de la reserva")).toHaveValue("");
+    expect(screen.getByLabelText("Hora de inicio")).toHaveValue("");
+    expect(screen.getByLabelText("Hora de finalización")).toHaveValue("");
   });
 
   it("keeps the date but clears the time range when the space changes", async () => {
@@ -531,16 +533,16 @@ describe("NewReservationView", () => {
       ).toBeInTheDocument()
     );
 
-    await user.selectOptions(screen.getByLabelText("Place"), PLACE_ID);
-    await user.selectOptions(screen.getByLabelText("Space"), SPACE_ID);
-    await user.type(screen.getByLabelText("Reservation date"), "2026-05-01");
-    await user.type(screen.getByLabelText("Start time"), "10:00");
-    await user.type(screen.getByLabelText("End time"), "12:00");
+    await user.selectOptions(screen.getByLabelText("Lugar"), PLACE_ID);
+    await user.selectOptions(screen.getByLabelText("Oficina"), SPACE_ID);
+    await user.type(screen.getByLabelText("Fecha de la reserva"), "2026-05-01");
+    await user.type(screen.getByLabelText("Hora de inicio"), "10:00");
+    await user.type(screen.getByLabelText("Hora de finalización"), "12:00");
 
-    await user.selectOptions(screen.getByLabelText("Space"), THIRD_SPACE_ID);
+    await user.selectOptions(screen.getByLabelText("Oficina"), THIRD_SPACE_ID);
 
-    expect(screen.getByLabelText("Reservation date")).toHaveValue("2026-05-01");
-    expect(screen.getByLabelText("Start time")).toHaveValue("");
-    expect(screen.getByLabelText("End time")).toHaveValue("");
+    expect(screen.getByLabelText("Fecha de la reserva")).toHaveValue("2026-05-01");
+    expect(screen.getByLabelText("Hora de inicio")).toHaveValue("");
+    expect(screen.getByLabelText("Hora de finalización")).toHaveValue("");
   });
 });

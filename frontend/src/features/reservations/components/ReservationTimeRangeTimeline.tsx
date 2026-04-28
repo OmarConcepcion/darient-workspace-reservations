@@ -47,11 +47,11 @@ export const ReservationTimeRangeTimeline = ({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-600">
-            Availability reference
+            Referencia de disponibilidad
           </h3>
           <p className="mt-1 text-sm text-slate-600">
-            The day stays fixed while you choose the start and end hour for the
-            reservation.
+            El día se mantiene fijo mientras eliges la hora de inicio y fin de la
+            reserva.
           </p>
         </div>
         {reservationDate ? (
@@ -63,36 +63,36 @@ export const ReservationTimeRangeTimeline = ({
 
       {!isReady ? (
         <p className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm text-slate-500">
-          Select a space and a reservation date to preview the day.
+          Selecciona una oficina y una fecha de reserva para previsualizar el día.
         </p>
       ) : isLoading ? (
         <p className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm text-slate-500">
-          Loading daily availability...
+          Cargando disponibilidad diaria...
         </p>
       ) : isError ? (
         <p className="mt-5 rounded-2xl border border-dashed border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-700">
-          We couldn&apos;t load the availability reference for this day.
+          No pudimos cargar la referencia de disponibilidad para este día.
         </p>
       ) : (
         <div className="mt-5 space-y-4">
           <TimelineTrack
-            label="Selected range"
+            label="Rango seleccionado"
             tone="selected"
             windows={selectedRange ? [selectedRange] : []}
-            empty="Choose a start and end time to highlight your request."
+            empty="Elige una hora de inicio y fin para resaltar tu solicitud."
             inputMode
           />
           <TimelineTrack
-            label="Available"
+            label="Disponible"
             tone="available"
             windows={availableWindows}
-            empty="No available windows reported for this day."
+            empty="No hay ventanas disponibles reportadas para este día."
           />
           <TimelineTrack
-            label="Reserved"
+            label="Reservado"
             tone="reserved"
             windows={reservedWindows}
-            empty="No reserved windows reported for this day."
+            empty="No hay ventanas reservadas reportadas para este día."
           />
           <div className="grid grid-cols-5 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
             {HOUR_MARKERS.map((marker) => (
@@ -105,8 +105,8 @@ export const ReservationTimeRangeTimeline = ({
             ))}
           </div>
           <p className="text-xs text-slate-500">
-            Availability is shown as reference only in this first version. The
-            backend still validates conflicts when you submit.
+            La disponibilidad se muestra solo como referencia en esta primera
+            versión. El backend sigue validando conflictos al enviar.
           </p>
         </div>
       )}

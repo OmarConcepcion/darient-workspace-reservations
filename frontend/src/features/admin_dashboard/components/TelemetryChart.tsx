@@ -8,6 +8,7 @@ import {
   YAxis
 } from "recharts";
 
+import { formatUiTime } from "../../../shared/i18n";
 import { Card } from "../../../shared/ui";
 
 export type TelemetryChartPoint = {
@@ -24,10 +25,11 @@ type TelemetryChartProps = {
 const formatTimeTick = (iso: string): string => {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleTimeString([], {
+  return formatUiTime(date, {
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit"
+    second: "2-digit",
+    hour12: false
   });
 };
 
@@ -37,10 +39,10 @@ export const TelemetryChart = ({ points, isLive }: TelemetryChartProps) => (
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-sm font-semibold text-slate-900">
-            Live telemetry
+            Telemetría en vivo
           </h3>
           <p className="text-xs text-slate-500">
-            Rolling window of average CO₂ and peak occupancy.
+            Ventana móvil con CO₂ promedio y ocupación máxima.
           </p>
         </div>
         <span
@@ -55,13 +57,13 @@ export const TelemetryChart = ({ points, isLive }: TelemetryChartProps) => (
               isLive ? "animate-pulse bg-emerald-500" : "bg-slate-400"
             }`}
           />
-          {isLive ? "Live" : "Offline"}
+          {isLive ? "En vivo" : "Sin conexión"}
         </span>
       </header>
 
       {points.length === 0 ? (
         <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/40 text-sm text-slate-500">
-          Waiting for telemetry…
+          Esperando telemetría…
         </div>
       ) : (
         <div className="h-72 w-full min-w-0">
@@ -115,7 +117,7 @@ export const TelemetryChart = ({ points, isLive }: TelemetryChartProps) => (
                 yAxisId="occupancy"
                 type="monotone"
                 dataKey="occupancy"
-                name="Occupancy"
+                name="Ocupación"
                 stroke="#f59e0b"
                 strokeWidth={2}
                 dot={false}

@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 
+import { uiTerms } from "../../../shared/i18n";
 import {
   ArrowRightIcon,
   Badge,
@@ -46,13 +47,13 @@ export const SpaceCard = ({ space, place, layout = "grid" }: SpaceCardProps) => 
                   {space.name}
                 </h3>
                 <p className="mt-1 truncate text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
-                  {place?.name ?? "Unknown place"}
+                  {place?.name ?? "Lugar desconocido"}
                 </p>
               </div>
             </div>
             <Badge tone="brand">
               <UsersIcon size={12} />
-              Capacity {space.capacity}
+              Capacidad {space.capacity}
             </Badge>
           </header>
 
@@ -84,7 +85,7 @@ export const SpaceCard = ({ space, place, layout = "grid" }: SpaceCardProps) => 
               </code>
             </span>
             <span className="inline-flex items-center gap-1 rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white shadow-lg shadow-brand-700/20">
-              View details
+              {uiTerms.actions.viewDetails}
               <ArrowRightIcon
                 size={14}
                 className="transition group-hover:translate-x-0.5"

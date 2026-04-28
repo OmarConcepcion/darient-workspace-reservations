@@ -124,24 +124,22 @@ describe("SpaceMonitoringView", () => {
   it("renders telemetry stats, device state and alerts", async () => {
     renderView();
 
-    expect(await screen.findByText("Avg CO₂")).toBeInTheDocument();
+    expect(await screen.findByText("CO₂ prom.")).toBeInTheDocument();
     expect(screen.getByText("930 ppm")).toBeInTheDocument();
-    expect(screen.getByText("Max 950 ppm")).toBeInTheDocument();
+    expect(screen.getByText("Máx. 950 ppm")).toBeInTheDocument();
     expect(screen.getByText("4 / 4")).toBeInTheDocument();
     expect(screen.getByText("24.1 °C")).toBeInTheDocument();
     expect(screen.getByText("120 W")).toBeInTheDocument();
 
-    expect(screen.getByText("Device state")).toBeInTheDocument();
-    expect(screen.getAllByText("Published").length).toBeGreaterThan(0);
+    expect(screen.getByText("Estado del dispositivo")).toBeInTheDocument();
+    expect(screen.getAllByText("Publicado").length).toBeGreaterThan(0);
     expect(screen.getByText("1.0.0")).toBeInTheDocument();
 
-    expect(screen.getByText("Alerts")).toBeInTheDocument();
+    expect(screen.getByText("Alertas")).toBeInTheDocument();
     expect(screen.getByText("CO₂")).toBeInTheDocument();
-    expect(screen.getByText("Open")).toBeInTheDocument();
+    expect(screen.getByText("Abierta")).toBeInTheDocument();
 
-    expect(
-      screen.getByText("1 active alert")
-    ).toBeInTheDocument();
+    expect(screen.getByText("1 alerta activa")).toBeInTheDocument();
   });
 
   it("publishes a desired-state update and toasts on success", async () => {
@@ -166,21 +164,19 @@ describe("SpaceMonitoringView", () => {
     const user = userEvent.setup();
     renderView();
 
-    const samplingInput = await screen.findByLabelText(
-      "Sampling interval (seconds)"
-    );
-    const thresholdInput = screen.getByLabelText("CO₂ alert threshold (ppm)");
+    const samplingInput = await screen.findByLabelText("Intervalo de muestreo (segundos)");
+    const thresholdInput = screen.getByLabelText("Umbral de alerta de CO₂ (ppm)");
 
     await user.clear(samplingInput);
     await user.type(samplingInput, "20");
     await user.clear(thresholdInput);
     await user.type(thresholdInput, "900");
 
-    await user.click(screen.getByRole("button", { name: "Publish update" }));
+    await user.click(screen.getByRole("button", { name: "Publicar actualización" }));
 
     await waitFor(() =>
       expect(toastSuccess).toHaveBeenCalledWith(
-        "Desired state updated and published."
+        "El estado deseado se actualizó y se publicó."
       )
     );
     expect(publishedBody).toEqual({
@@ -210,16 +206,16 @@ describe("SpaceMonitoringView", () => {
     const user = userEvent.setup();
     renderView();
 
-    const samplingInput = await screen.findByLabelText(
-      "Sampling interval (seconds)"
-    );
+    const samplingInput = await screen.findByLabelText("Intervalo de muestreo (segundos)");
     await user.clear(samplingInput);
     await user.type(samplingInput, "30");
 
-    await user.click(screen.getByRole("button", { name: "Publish update" }));
+    await user.click(screen.getByRole("button", { name: "Publicar actualización" }));
 
     await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith("Broker unavailable.")
+      expect(toastError).toHaveBeenCalledWith(
+        "No se pudo publicar la configuración del dispositivo."
+      )
     );
     expect(toastSuccess).not.toHaveBeenCalled();
   });

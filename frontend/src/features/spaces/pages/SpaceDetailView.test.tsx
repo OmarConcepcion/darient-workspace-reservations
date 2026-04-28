@@ -83,9 +83,9 @@ describe("SpaceDetailView", () => {
     expect(screen.getAllByText("Floor 3").length).toBeGreaterThan(0);
     expect(screen.getAllByText("OFFICE_1").length).toBeGreaterThan(0);
     expect(screen.getAllByText("America/Panama").length).toBeGreaterThan(0);
-    expect(await screen.findByText("Daily availability")).toBeInTheDocument();
-    expect(screen.getAllByText("Reserved").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Available").length).toBeGreaterThan(0);
+    expect(await screen.findByText("Disponibilidad diaria")).toBeInTheDocument();
+    expect(screen.getAllByText("Reservado").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Disponible").length).toBeGreaterThan(0);
   });
 
   it("renders the error state when the space is missing", async () => {
@@ -112,6 +112,6 @@ describe("SpaceDetailView", () => {
     );
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Space not found.");
+    expect(alert).toHaveTextContent("No se encontró el recurso solicitado.");
   });
 });

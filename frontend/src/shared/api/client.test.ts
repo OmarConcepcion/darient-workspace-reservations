@@ -45,7 +45,7 @@ describe("api client", () => {
 
     expect(error).toEqual({
       code: "VALIDATION_ERROR",
-      message: "Invalid request payload.",
+      message: "La solicitud contiene datos inválidos.",
       details: {}
     });
   });

@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useState, type ReactNode } from "react";
 
 import { normalizeApiError } from "../../../shared/api/errors";
+import { uiTerms } from "../../../shared/i18n";
 import {
   AlertCircleIcon,
   ArrowRightIcon,
@@ -53,7 +54,7 @@ export const ReservationDetailView = () => {
     cancelMutation.mutate(reservation.id, {
       onSuccess: () => {
         setShowCancelModal(false);
-        toast.success("Reservation cancelled.");
+        toast.success("Reserva cancelada.");
       },
       onError: (error) => toast.error(normalizeApiError(error).message)
     });
@@ -64,7 +65,7 @@ export const ReservationDetailView = () => {
     deleteMutation.mutate(reservation.id, {
       onSuccess: () => {
         setShowDeleteModal(false);
-        toast.success("Reservation deleted.");
+        toast.success("Reserva eliminada.");
         navigate("/reservations");
       },
       onError: (error) => toast.error(normalizeApiError(error).message)
@@ -78,26 +79,26 @@ export const ReservationDetailView = () => {
         className="inline-flex min-h-11 items-center gap-2 rounded-2xl px-1 text-sm font-semibold text-slate-500 transition hover:text-brand-700"
       >
         <ChevronLeftIcon size={16} />
-        Back to reservations
+        Volver a reservas
       </Link>
 
       {reservationQuery.isLoading ? (
         <Skeleton
           className="h-80"
           aria-busy="true"
-          aria-label="Loading reservation"
+          aria-label={uiTerms.a11y.loadingReservation}
         />
       ) : reservationQuery.isError ? (
         <ErrorState
-          title="Reservation not available"
+          title="Reserva no disponible"
           message={normalizeApiError(reservationQuery.error).message}
           onRetry={() => reservationQuery.refetch()}
         />
       ) : reservation ? (
         <>
           <PageHeader
-            eyebrow="Reservation detail"
-            title={spaceQuery.data?.name ?? "Reservation"}
+            eyebrow="Detalle de reserva"
+            title={spaceQuery.data?.name ?? "Reserva"}
             description={formatDateTimeRange(reservation.startsAt, reservation.endsAt)}
             actions={
               <div className="flex flex-wrap gap-2">
@@ -107,7 +108,7 @@ export const ReservationDetailView = () => {
                     onClick={() => setShowCancelModal(true)}
                     disabled={cancelMutation.isPending}
                   >
-                    Cancel
+                    {uiTerms.actions.cancel}
                   </Button>
                 ) : null}
                 {reservation.status === "CANCELLED" ? (
@@ -117,14 +118,14 @@ export const ReservationDetailView = () => {
                     disabled={deleteMutation.isPending}
                   >
                     <TrashIcon size={16} />
-                    Delete
+                    {uiTerms.actions.delete}
                   </Button>
                 ) : null}
                 <Link
                   to="/reservations/new"
                   className={buttonClasses("primary", "md")}
                 >
-                  New reservation
+                  {uiTerms.actions.newReservation}
                   <ArrowRightIcon size={16} />
                 </Link>
               </div>
@@ -135,8 +136,8 @@ export const ReservationDetailView = () => {
             <div className="flex gap-3">
               <AlertCircleIcon size={20} className="mt-0.5 flex-shrink-0" />
               <p className="text-sm font-semibold leading-6">
-                Reservations cannot be edited. If something is wrong, cancel this
-                reservation and create a new one.
+                Las reservas no se pueden editar. Si algo está mal, cancela esta
+                reserva y crea una nueva.
               </p>
             </div>
           </Card>
@@ -146,7 +147,7 @@ export const ReservationDetailView = () => {
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">
-                    {placeQuery.data?.name ?? "Place pending..."}
+                    {placeQuery.data?.name ?? "Lugar pendiente..."}
                   </p>
                   <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
                     {reservation.customerEmail}
@@ -158,38 +159,38 @@ export const ReservationDetailView = () => {
               <dl className="mt-8 grid gap-4 sm:grid-cols-2">
                 <DetailField
                   icon={<MailIcon size={18} />}
-                  label="Customer"
+                  label="Cliente"
                   value={reservation.customerEmail}
                 />
                 <DetailField
                   icon={<CalendarIcon size={18} />}
-                  label="Space"
+                  label="Oficina"
                   value={spaceQuery.data?.name ?? reservation.spaceId}
                 />
                 <DetailField
                   icon={<ClockIcon size={18} />}
-                  label="Reserved window"
+                  label="Rango reservado"
                   value={formatDateTimeRange(reservation.startsAt, reservation.endsAt)}
                 />
                 <DetailField
                   icon={<ClockIcon size={18} />}
-                  label="Duration"
+                  label="Duración"
                   value={formatDuration(reservation.startsAt, reservation.endsAt)}
                 />
               </dl>
             </Card>
 
             <Card className="p-6">
-              <h2 className="font-semibold text-slate-950">Timeline</h2>
+              <h2 className="font-semibold text-slate-950">Cronología</h2>
               <dl className="mt-5 space-y-4 text-sm">
-                <TimelineField label="Created" value={formatDateTime(reservation.createdAt)} />
-                <TimelineField label="Updated" value={formatDateTime(reservation.updatedAt)} />
+                <TimelineField label="Creada" value={formatDateTime(reservation.createdAt)} />
+                <TimelineField label="Actualizada" value={formatDateTime(reservation.updatedAt)} />
                 <TimelineField
-                  label="Cancelled"
+                  label="Cancelada"
                   value={
                     reservation.cancelledAt
                       ? formatDateTime(reservation.cancelledAt)
-                      : "Not cancelled"
+                      : "No cancelada"
                   }
                 />
               </dl>
@@ -198,20 +199,20 @@ export const ReservationDetailView = () => {
 
           <Modal
             isOpen={showCancelModal}
-            title="Cancel reservation"
-            description="This marks the reservation as cancelled. A cancelled reservation can be deleted later."
+            title={uiTerms.actions.cancelReservation}
+            description="Esto marca la reserva como cancelada. Una reserva cancelada se puede eliminar después."
             onClose={() => setShowCancelModal(false)}
             actions={
               <>
                 <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
-                  Keep reservation
+                  {uiTerms.actions.keepReservation}
                 </Button>
                 <Button
                   variant="danger"
                   onClick={handleCancel}
                   disabled={cancelMutation.isPending}
                 >
-                  Confirm cancel
+                  {uiTerms.actions.confirmCancel}
                 </Button>
               </>
             }
@@ -219,20 +220,20 @@ export const ReservationDetailView = () => {
 
           <Modal
             isOpen={showDeleteModal}
-            title="Delete reservation"
-            description="This permanently removes the cancelled reservation from the system."
+            title={uiTerms.actions.deleteReservation}
+            description="Esto elimina permanentemente la reserva cancelada del sistema."
             onClose={() => setShowDeleteModal(false)}
             actions={
               <>
                 <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-                  Keep record
+                  {uiTerms.actions.keepRecord}
                 </Button>
                 <Button
                   variant="danger"
                   onClick={handleDelete}
                   disabled={deleteMutation.isPending}
                 >
-                  Confirm delete
+                  {uiTerms.actions.confirmDelete}
                 </Button>
               </>
             }

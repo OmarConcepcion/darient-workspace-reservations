@@ -1,3 +1,4 @@
+import { devicePublishStatusLabels, formatUiDateTime } from "../../../shared/i18n";
 import { Badge, Card } from "../../../shared/ui";
 import type {
   DeviceDesired,
@@ -14,9 +15,9 @@ const publishToneLabel: Record<
   DeviceDesiredPublishStatus,
   { label: string; tone: "brand" | "success" | "warning" | "danger" }
 > = {
-  PENDING: { label: "Pending", tone: "warning" },
-  PUBLISHED: { label: "Published", tone: "success" },
-  FAILED: { label: "Failed", tone: "danger" }
+  PENDING: { label: devicePublishStatusLabels.PENDING, tone: "warning" },
+  PUBLISHED: { label: devicePublishStatusLabels.PUBLISHED, tone: "success" },
+  FAILED: { label: devicePublishStatusLabels.FAILED, tone: "danger" }
 };
 
 export const DeviceReportedPanel = ({
@@ -27,9 +28,9 @@ export const DeviceReportedPanel = ({
     <div className="space-y-5 p-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">Device state</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Estado del dispositivo</h3>
           <p className="text-xs text-slate-500">
-            Compare what we requested with what the device last reported.
+            Compara lo solicitado con lo último que reportó el dispositivo.
           </p>
         </div>
         {desired ? (
@@ -41,49 +42,55 @@ export const DeviceReportedPanel = ({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <StateColumn
-          title="Desired"
-          eyebrow="Backend setpoint"
+          title="Deseado"
+          eyebrow="Configuración del backend"
           rows={
             desired
               ? [
                   {
-                    label: "Sampling interval",
+                    label: "Intervalo de muestreo",
                     value: `${desired.samplingIntervalSec} s`
                   },
                   {
-                    label: "CO₂ threshold",
+                    label: "Umbral de CO₂",
                     value: `${desired.co2AlertThreshold} ppm`
                   },
                   {
-                    label: "Last published",
+                    label: "Última publicación",
                     value: desired.lastPublishedAt
-                      ? new Date(desired.lastPublishedAt).toLocaleString()
+                      ? formatUiDateTime(desired.lastPublishedAt, {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })
                       : "—"
                   }
                 ]
               : null
           }
-          fallback="No desired state set yet"
+          fallback="Todavía no hay estado deseado"
           footer={
             desired?.publishStatus === "FAILED" && desired.publishError ? (
               <p className="rounded-md bg-rose-50 px-3 py-2 text-xs text-rose-700 ring-1 ring-rose-100">
-                Last publish error: {desired.publishError}
+                Último error de publicación: {desired.publishError}
               </p>
             ) : null
           }
         />
         <StateColumn
-          title="Reported"
-          eyebrow="Last device sync"
+          title="Reportado"
+          eyebrow="Última sincronización del dispositivo"
           rows={
             reported
               ? [
                   {
-                    label: "Sampling interval",
+                    label: "Intervalo de muestreo",
                     value: `${reported.samplingIntervalSec} s`
                   },
                   {
-                    label: "CO₂ threshold",
+                    label: "Umbral de CO₂",
                     value: `${reported.co2AlertThreshold} ppm`
                   },
                   {
@@ -91,13 +98,19 @@ export const DeviceReportedPanel = ({
                     value: reported.firmwareVersion
                   },
                   {
-                    label: "Reported at",
-                    value: new Date(reported.reportedAt).toLocaleString()
+                    label: "Reportado en",
+                    value: formatUiDateTime(reported.reportedAt, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })
                   }
                 ]
               : null
           }
-          fallback="Device has not reported yet"
+          fallback="El dispositivo todavía no ha reportado"
         />
       </div>
     </div>

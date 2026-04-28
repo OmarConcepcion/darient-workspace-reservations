@@ -2,6 +2,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import {
+  formatActiveAlertsLabel,
+  uiTerms
+} from "../../../shared/i18n";
 import { normalizeApiError } from "../../../shared/api/errors";
 import {
   ActivityIcon,
@@ -111,18 +115,18 @@ export const SpaceMonitoringView = () => {
         className="inline-flex min-h-11 items-center gap-2 rounded-2xl px-1 text-sm font-semibold text-slate-500 transition hover:text-brand-700"
       >
         <ChevronLeftIcon size={16} />
-        Back to admin
+        Volver a admin
       </Link>
 
       {monitoringQuery.isLoading ? (
         <Skeleton
           className="h-64"
           aria-busy="true"
-          aria-label="Loading monitoring snapshot"
+          aria-label={uiTerms.a11y.loadingMonitoring}
         />
       ) : monitoringQuery.isError ? (
         <ErrorState
-          title="We couldn’t load monitoring"
+          title="No pudimos cargar el monitoreo"
           message={normalizeApiError(monitoringQuery.error).message}
           onRetry={() => monitoringQuery.refetch()}
         />
@@ -130,45 +134,44 @@ export const SpaceMonitoringView = () => {
         <>
           <PageHeader
             eyebrow={`${snapshot.iotSiteId} · ${snapshot.iotOfficeId}`}
-            title={`Space ${snapshot.iotOfficeId}`}
-            description={`Capacity ${snapshot.capacity} · ${snapshot.timezone}`}
+            title={`Oficina ${snapshot.iotOfficeId}`}
+            description={`Capacidad ${snapshot.capacity} · ${snapshot.timezone}`}
             actions={
               <Badge tone={snapshot.activeAlerts.length > 0 ? "danger" : "success"}>
                 <AlertCircleIcon size={12} />
-                {snapshot.activeAlerts.length} active{" "}
-                {snapshot.activeAlerts.length === 1 ? "alert" : "alerts"}
+                {formatActiveAlertsLabel(snapshot.activeAlerts.length)}
               </Badge>
             }
           />
 
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
-              label="Avg CO₂"
+              label="CO₂ prom."
               value={stats.co2 !== null ? `${stats.co2} ppm` : "—"}
-              hint={stats.maxCo2 !== null ? `Max ${stats.maxCo2} ppm` : undefined}
+              hint={stats.maxCo2 !== null ? `Máx. ${stats.maxCo2} ppm` : undefined}
               tone="brand"
               icon={<ActivityIcon size={16} />}
             />
             <StatCard
-              label="Max occupancy"
+              label="Ocupación máx."
               value={
                 stats.occupancy !== null
                   ? `${stats.occupancy} / ${snapshot.capacity}`
                   : "—"
               }
-              hint="Latest aggregation window"
+              hint="Última ventana agregada"
               tone="warning"
               icon={<UsersIcon size={16} />}
             />
             <StatCard
-              label="Avg temp"
+              label="Temp. prom."
               value={stats.temp !== null ? `${stats.temp} °C` : "—"}
-              hint={stats.humidity !== null ? `${stats.humidity}% humidity` : undefined}
+              hint={stats.humidity !== null ? `${stats.humidity}% de humedad` : undefined}
             />
             <StatCard
-              label="Power"
+              label="Potencia"
               value={stats.power !== null ? `${stats.power} W` : "—"}
-              hint="Latest reading"
+              hint="Última lectura"
               icon={<CpuIcon size={16} />}
             />
           </div>
@@ -192,16 +195,16 @@ export const SpaceMonitoringView = () => {
 
           <section className="space-y-3">
             <header>
-              <h2 className="text-lg font-semibold text-slate-900">Alerts</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Alertas</h2>
               <p className="text-sm text-slate-500">
-                Open alerts first, followed by resolved history.
+                Primero se muestran las alertas abiertas y luego el historial resuelto.
               </p>
             </header>
             {alertsQuery.isLoading ? (
               <Skeleton className="h-40" />
             ) : alertsQuery.isError ? (
               <ErrorState
-                title="We couldn’t load alerts"
+                title="No pudimos cargar las alertas"
                 message={normalizeApiError(alertsQuery.error).message}
                 onRetry={() => alertsQuery.refetch()}
               />

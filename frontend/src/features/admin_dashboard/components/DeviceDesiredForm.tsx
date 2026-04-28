@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { normalizeApiError } from "../../../shared/api/errors";
+import { uiTerms } from "../../../shared/i18n";
 import { Button, Card, cn } from "../../../shared/ui";
 import { useUpdateDeviceDesired } from "../hooks/use-monitoring";
 import {
@@ -50,7 +51,7 @@ export const DeviceDesiredForm = ({
       },
       {
         onSuccess: () => {
-          toast.success("Desired state updated and published.");
+          toast.success("El estado deseado se actualizó y se publicó.");
           form.reset(values);
         },
         onError: (error) => {
@@ -67,11 +68,11 @@ export const DeviceDesiredForm = ({
       <form onSubmit={onSubmit} noValidate className="space-y-5 p-6">
         <header>
           <h3 className="text-sm font-semibold text-slate-900">
-            Update desired state
+            Actualizar estado deseado
           </h3>
           <p className="text-xs text-slate-500">
-            Pushes a new <code className="font-mono text-[11px]">desired</code>{" "}
-            payload over MQTT. The device acknowledges via{" "}
+            Envía un nuevo payload <code className="font-mono text-[11px]">desired</code>{" "}
+            por MQTT. El dispositivo confirma mediante{" "}
             <code className="font-mono text-[11px]">reported</code>.
           </p>
         </header>
@@ -79,7 +80,7 @@ export const DeviceDesiredForm = ({
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             id="sampling_interval_sec"
-            label="Sampling interval (seconds)"
+            label="Intervalo de muestreo (segundos)"
             error={errors.sampling_interval_sec?.message}
           >
             <input
@@ -94,7 +95,7 @@ export const DeviceDesiredForm = ({
           </Field>
           <Field
             id="co2_alert_threshold"
-            label="CO₂ alert threshold (ppm)"
+            label="Umbral de alerta de CO₂ (ppm)"
             error={errors.co2_alert_threshold?.message}
           >
             <input
@@ -122,13 +123,13 @@ export const DeviceDesiredForm = ({
             }
             disabled={!form.formState.isDirty || mutation.isPending}
           >
-            Reset
+            {uiTerms.actions.reset}
           </Button>
           <Button
             type="submit"
             disabled={mutation.isPending || !form.formState.isDirty}
           >
-            {mutation.isPending ? "Publishing…" : "Publish update"}
+            {mutation.isPending ? uiTerms.actions.publishing : uiTerms.actions.publishUpdate}
           </Button>
         </div>
       </form>

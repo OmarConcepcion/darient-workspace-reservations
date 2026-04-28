@@ -1,3 +1,4 @@
+import { uiTerms } from "../i18n";
 import { useEffect, type ReactNode } from "react";
 
 import { XIcon } from "./icons";
@@ -65,7 +66,7 @@ export const Modal = ({
             type="button"
             onClick={onClose}
             className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
-            aria-label="Close modal"
+            aria-label={uiTerms.actions.closeModal}
           >
             <XIcon size={18} />
           </button>

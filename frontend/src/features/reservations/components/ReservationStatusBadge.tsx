@@ -1,3 +1,4 @@
+import { reservationStatusLabels } from "../../../shared/i18n";
 import { Badge, type BadgeTone } from "../../../shared/ui";
 import type { ReservationStatus } from "../schemas/reservation";
 
@@ -7,12 +8,6 @@ const tones: Record<ReservationStatus, BadgeTone> = {
   EXPIRED: "warning"
 };
 
-const labels: Record<ReservationStatus, string> = {
-  ACTIVE: "Active",
-  CANCELLED: "Cancelled",
-  EXPIRED: "Expired"
-};
-
 type ReservationStatusBadgeProps = {
   status: ReservationStatus;
 };
@@ -20,5 +15,5 @@ type ReservationStatusBadgeProps = {
 export const ReservationStatusBadge = ({
   status
 }: ReservationStatusBadgeProps) => (
-  <Badge tone={tones[status]}>{labels[status]}</Badge>
+  <Badge tone={tones[status]}>{reservationStatusLabels[status]}</Badge>
 );

@@ -96,11 +96,11 @@ describe("ReservationDetailView", () => {
     expect(await screen.findByText("Headquarters")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Reservations cannot be edited. If something is wrong, cancel this reservation and create a new one."
+        "Las reservas no se pueden editar. Si algo está mal, cancela esta reserva y crea una nueva."
       )
     ).toBeInTheDocument();
-    expect(screen.getAllByText(/May 1, 2026/).length).toBeGreaterThan(0);
-    expect(screen.getByText("1h 30m")).toBeInTheDocument();
+    expect(screen.getAllByText(/mayo/i).length).toBeGreaterThan(0);
+    expect(screen.getByText("1 h 30 min")).toBeInTheDocument();
   });
 
   it("cancels an active reservation from the detail page", async () => {
@@ -122,11 +122,11 @@ describe("ReservationDetailView", () => {
     const user = userEvent.setup();
     renderDetail();
 
-    await user.click(await screen.findByRole("button", { name: "Cancel" }));
-    await user.click(screen.getByRole("button", { name: "Confirm cancel" }));
+    await user.click(await screen.findByRole("button", { name: "Cancelar" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar cancelación" }));
 
     await waitFor(() => expect(cancelHits).toBe(1));
-    expect(toastSuccess).toHaveBeenCalledWith("Reservation cancelled.");
+    expect(toastSuccess).toHaveBeenCalledWith("Reserva cancelada.");
   });
 
   it("deletes a cancelled reservation from the detail page", async () => {
@@ -148,8 +148,8 @@ describe("ReservationDetailView", () => {
     const user = userEvent.setup();
     renderDetail();
 
-    await user.click(await screen.findByRole("button", { name: "Delete" }));
-    await user.click(screen.getByRole("button", { name: "Confirm delete" }));
+    await user.click(await screen.findByRole("button", { name: "Eliminar" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar eliminación" }));
 
     await waitFor(() => expect(deleteHits).toBe(1));
     expect(await screen.findByTestId("reservations-list")).toBeInTheDocument();

@@ -1,3 +1,4 @@
+import { formatUiDateTime } from "../../../shared/i18n";
 import { Card, EmptyState, InboxIcon } from "../../../shared/ui";
 import type { Alert } from "../schemas/alert";
 import { AlertStatusBadge, AlertTypeBadge } from "./AlertStatusBadge";
@@ -11,8 +12,8 @@ export const AlertsTable = ({ alerts }: AlertsTableProps) => {
     return (
       <EmptyState
         icon={<InboxIcon size={20} />}
-        title="No alerts on record"
-        description="When CO₂, occupancy or unexpected-presence rules trigger, alerts will show up here."
+        title="No hay alertas registradas"
+        description="Cuando se activen reglas de CO₂, ocupación o presencia inesperada, las alertas aparecerán aquí."
       />
     );
   }
@@ -24,19 +25,19 @@ export const AlertsTable = ({ alerts }: AlertsTableProps) => {
           <thead className="bg-slate-50/70 text-left text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             <tr>
               <th scope="col" className="px-5 py-3">
-                Type
+                Tipo
               </th>
               <th scope="col" className="px-5 py-3">
-                Status
+                Estado
               </th>
               <th scope="col" className="px-5 py-3">
-                Started
+                Inicio
               </th>
               <th scope="col" className="px-5 py-3">
-                Resolved
+                Resuelta
               </th>
               <th scope="col" className="px-5 py-3">
-                Detail
+                Detalle
               </th>
             </tr>
           </thead>
@@ -53,11 +54,23 @@ export const AlertsTable = ({ alerts }: AlertsTableProps) => {
                   <AlertStatusBadge status={alert.status} />
                 </td>
                 <td className="px-5 py-4 text-slate-700">
-                  {new Date(alert.startedAt).toLocaleString()}
+                  {formatUiDateTime(alert.startedAt, {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })}
                 </td>
                 <td className="px-5 py-4 text-slate-600">
                   {alert.resolvedAt
-                    ? new Date(alert.resolvedAt).toLocaleString()
+                    ? formatUiDateTime(alert.resolvedAt, {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })
                     : "—"}
                 </td>
                 <td className="px-5 py-4 font-mono text-xs text-slate-600">
