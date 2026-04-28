@@ -302,6 +302,7 @@ const AvailabilityCalendar = ({
           type="date"
           value={selectedDate}
           onChange={(event) => onDateChange(event.target.value)}
+          onClick={openNativePicker}
           className="mt-1 block min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100"
         />
       </label>
@@ -379,3 +380,15 @@ const WindowList = ({
     )}
   </div>
 );
+
+const openNativePicker = (event: React.MouseEvent<HTMLInputElement>): void => {
+  if (typeof event.currentTarget.showPicker !== "function") {
+    return;
+  }
+
+  try {
+    event.currentTarget.showPicker();
+  } catch {
+    // Ignore unsupported or already-open picker calls.
+  }
+};

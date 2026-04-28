@@ -177,6 +177,45 @@ const renderForm = () =>
   );
 
 describe("NewReservationView", () => {
+  it("opens native date and time pickers when clicking anywhere inside the inputs", async () => {
+    const user = userEvent.setup();
+    const showPicker = vi.fn();
+    const descriptor = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "showPicker"
+    );
+
+    Object.defineProperty(HTMLInputElement.prototype, "showPicker", {
+      configurable: true,
+      value: showPicker
+    });
+
+    renderForm();
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("option", { name: "Headquarters" })
+      ).toBeInTheDocument()
+    );
+
+    await user.click(screen.getByLabelText("Reservation date"));
+    await user.click(screen.getByLabelText("Start time"));
+    await user.click(screen.getByLabelText("End time"));
+
+    expect(showPicker).toHaveBeenCalledTimes(3);
+
+    if (descriptor) {
+      Object.defineProperty(HTMLInputElement.prototype, "showPicker", descriptor);
+    } else {
+      Reflect.deleteProperty(
+        HTMLInputElement.prototype as HTMLInputElement & {
+          showPicker?: () => void;
+        },
+        "showPicker"
+      );
+    }
+  });
+
   it("blocks submission and surfaces inline errors when fields are empty", async () => {
     const user = userEvent.setup();
     renderForm();

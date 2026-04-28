@@ -262,6 +262,7 @@ export const NewReservationView = () => {
                     id="reservation_date"
                     type="date"
                     {...reservationDateField}
+                    onClick={openNativePicker}
                     className={inputStyles(Boolean(errors.reservation_date))}
                   />
                 </Field>
@@ -276,6 +277,7 @@ export const NewReservationView = () => {
                     type="time"
                     step={3600}
                     {...form.register("start_time")}
+                    onClick={openNativePicker}
                     className={inputStyles(Boolean(errors.start_time))}
                   />
                 </Field>
@@ -290,6 +292,7 @@ export const NewReservationView = () => {
                     type="time"
                     step={3600}
                     {...form.register("end_time")}
+                    onClick={openNativePicker}
                     className={inputStyles(Boolean(errors.end_time))}
                   />
                 </Field>
@@ -394,6 +397,18 @@ const inputStyles = (hasError: boolean): string =>
       : "border-slate-200 hover:border-slate-300 focus:border-brand-400 focus:ring-brand-100",
     "disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
   );
+
+const openNativePicker = (event: React.MouseEvent<HTMLInputElement>): void => {
+  if (typeof event.currentTarget.showPicker !== "function") {
+    return;
+  }
+
+  try {
+    event.currentTarget.showPicker();
+  } catch {
+    // Ignore unsupported or already-open picker calls.
+  }
+};
 
 const extractAvailableWindows = (
   details: Record<string, unknown>
