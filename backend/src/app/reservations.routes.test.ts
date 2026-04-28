@@ -8,6 +8,10 @@ import type { ReservationRepository } from "../modules/reservations/ports/reserv
 
 const apiKey = { "x-api-key": "test-api-key" };
 const fixedNow = new Date("2026-04-27T15:00:00.000Z");
+const futureStart = "2026-05-28T14:00:00.000Z";
+const futureEnd = "2026-05-28T15:00:00.000Z";
+const futureOverlapStart = "2026-05-28T14:30:00.000Z";
+const futureOverlapEnd = "2026-05-28T15:30:00.000Z";
 
 const createRepositories = () => {
   const placeId = randomUUID();
@@ -80,7 +84,8 @@ const createRepositories = () => {
           reservation.status === "ACTIVE" &&
           reservation.startsAt >= startsAt &&
           reservation.startsAt < endsAt
-      ).length
+      ).length,
+    runInSerializableTransaction: async (operation) => operation(reservationRepository)
   };
 
   return {
@@ -160,8 +165,8 @@ describe("reservation routes", () => {
         place_id: placeId,
         space_id: spaceId,
         customer_email: "client@example.com",
-        starts_at: "2026-04-28T14:00:00.000Z",
-        ends_at: "2026-04-28T15:00:00.000Z"
+        starts_at: futureStart,
+        ends_at: futureEnd
       });
 
     expect(createResponse.status).toBe(201);
@@ -196,8 +201,8 @@ describe("reservation routes", () => {
         place_id: placeId,
         space_id: spaceId,
         customer_email: "client@example.com",
-        starts_at: "2026-04-28T14:00:00.000Z",
-        ends_at: "2026-04-28T15:00:00.000Z"
+        starts_at: futureStart,
+        ends_at: futureEnd
       });
 
     const cancelResponse = await request(app)
@@ -221,8 +226,8 @@ describe("reservation routes", () => {
         place_id: placeId,
         space_id: spaceId,
         customer_email: "client@example.com",
-        starts_at: "2026-04-28T14:00:00.000Z",
-        ends_at: "2026-04-28T15:00:00.000Z"
+        starts_at: futureStart,
+        ends_at: futureEnd
       });
 
     const blockedDeleteResponse = await request(app)
@@ -256,8 +261,8 @@ describe("reservation routes", () => {
         place_id: placeId,
         space_id: spaceId,
         customer_email: "client@example.com",
-        starts_at: "2026-04-28T14:00:00.000Z",
-        ends_at: "2026-04-28T15:00:00.000Z"
+        starts_at: futureStart,
+        ends_at: futureEnd
       });
 
     const conflictResponse = await request(app)
@@ -267,19 +272,19 @@ describe("reservation routes", () => {
         place_id: placeId,
         space_id: spaceId,
         customer_email: "other@example.com",
-        starts_at: "2026-04-28T14:30:00.000Z",
-        ends_at: "2026-04-28T15:30:00.000Z"
+        starts_at: futureOverlapStart,
+        ends_at: futureOverlapEnd
       });
 
     expect(conflictResponse.status).toBe(409);
     expect(conflictResponse.body.error.details.available_windows).toEqual([
       {
-        starts_at: "2026-04-28T13:00:00.000Z",
-        ends_at: "2026-04-28T14:00:00.000Z"
+        starts_at: "2026-05-28T13:00:00.000Z",
+        ends_at: "2026-05-28T14:00:00.000Z"
       },
       {
-        starts_at: "2026-04-28T15:00:00.000Z",
-        ends_at: "2026-04-28T23:00:00.000Z"
+        starts_at: "2026-05-28T15:00:00.000Z",
+        ends_at: "2026-05-28T23:00:00.000Z"
       }
     ]);
   });

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { prisma } from "../../../shared/prisma/prisma.js";
 import type {
@@ -11,11 +11,16 @@ import type {
   ReservationRepository
 } from "../ports/reservation-repository.js";
 
+type ReservationDbClient = PrismaClient | Prisma.TransactionClient;
+
 export class PrismaReservationRepository implements ReservationRepository {
-  public constructor(private readonly client: PrismaClient = prisma) {}
+  public constructor(
+    private readonly transactionRunner: PrismaClient = prisma,
+    private readonly db: ReservationDbClient = transactionRunner
+  ) {}
 
   public async create(input: CreateReservationInput): Promise<Reservation> {
-    const reservation = await this.client.reservation.create({
+    const reservation = await this.db.reservation.create({
       data: input
     });
 
@@ -23,7 +28,7 @@ export class PrismaReservationRepository implements ReservationRepository {
   }
 
   public async findById(id: string): Promise<Reservation | null> {
-    const reservation = await this.client.reservation.findUnique({
+    const reservation = await this.db.reservation.findUnique({
       where: { id }
     });
 
@@ -34,13 +39,13 @@ export class PrismaReservationRepository implements ReservationRepository {
     page,
     pageSize
   }: ReservationListInput): Promise<{ data: Reservation[]; total: number }> {
-    const [data, total] = await this.client.$transaction([
-      this.client.reservation.findMany({
+    const [data, total] = await this.transactionRunner.$transaction([
+      this.transactionRunner.reservation.findMany({
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { createdAt: "desc" }
       }),
-      this.client.reservation.count()
+      this.transactionRunner.reservation.count()
     ]);
 
     return {
@@ -53,7 +58,7 @@ export class PrismaReservationRepository implements ReservationRepository {
     id: string,
     input: PersistedReservationUpdateInput
   ): Promise<Reservation | null> {
-    const result = await this.client.reservation.updateManyAndReturn({
+    const result = await this.db.reservation.updateManyAndReturn({
       where: { id },
       data: input
     });
@@ -62,7 +67,7 @@ export class PrismaReservationRepository implements ReservationRepository {
   }
 
   public async delete(id: string): Promise<boolean> {
-    const result = await this.client.reservation.deleteMany({
+    const result = await this.db.reservation.deleteMany({
       where: { id }
     });
 
@@ -74,7 +79,7 @@ export class PrismaReservationRepository implements ReservationRepository {
     startsAt: Date,
     endsAt: Date
   ): Promise<Reservation[]> {
-    const reservations = await this.client.reservation.findMany({
+    const reservations = await this.db.reservation.findMany({
       where: {
         spaceId,
         status: "ACTIVE",
@@ -93,7 +98,7 @@ export class PrismaReservationRepository implements ReservationRepository {
     endsAt: Date,
     excludeReservationId?: string
   ): Promise<Reservation[]> {
-    const reservations = await this.client.reservation.findMany({
+    const reservations = await this.db.reservation.findMany({
       where: {
         id: excludeReservationId ? { not: excludeReservationId } : undefined,
         spaceId,
@@ -112,7 +117,7 @@ export class PrismaReservationRepository implements ReservationRepository {
     endsAt: Date,
     excludeReservationId?: string
   ): Promise<number> {
-    return this.client.reservation.count({
+    return this.db.reservation.count({
       where: {
         id: excludeReservationId ? { not: excludeReservationId } : undefined,
         customerEmail,
@@ -123,5 +128,23 @@ export class PrismaReservationRepository implements ReservationRepository {
         }
       }
     });
+  }
+
+  public runInSerializableTransaction<T>(
+    operation: (repository: ReservationRepository) => Promise<T>
+  ): Promise<T> {
+    if (this.db !== this.transactionRunner) {
+      return operation(this);
+    }
+
+    return this.transactionRunner.$transaction(
+      async (transaction) =>
+        operation(
+          new PrismaReservationRepository(this.transactionRunner, transaction)
+        ),
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+      }
+    );
   }
 }

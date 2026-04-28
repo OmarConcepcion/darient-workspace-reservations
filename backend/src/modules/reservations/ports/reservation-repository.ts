@@ -40,4 +40,7 @@ export type ReservationRepository = {
     endsAt: Date,
     excludeReservationId?: string
   ): Promise<number>;
+  runInSerializableTransaction<T>(
+    operation: (repository: ReservationRepository) => Promise<T>
+  ): Promise<T>;
 };

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import { createApp } from "./app.js";
+import type { ReservationRepository } from "../modules/reservations/ports/reservation-repository.js";
 
 type PlaceRecord = {
   id: string;
@@ -46,6 +47,69 @@ const createRepositories = () => {
   const places = new Map<string, PlaceRecord>();
   const spaces = new Map<string, SpaceRecord>();
   const reservations = new Map<string, ReservationRecord>();
+  let reservationRepository!: ReservationRepository;
+
+  reservationRepository = {
+    create: async (
+      input: Omit<
+        ReservationRecord,
+        "id" | "status" | "cancelledAt" | "createdAt" | "updatedAt"
+      >
+    ) => {
+      const reservation: ReservationRecord = {
+        ...input,
+        id: randomUUID(),
+        status: "ACTIVE",
+        cancelledAt: null,
+        createdAt: now,
+        updatedAt: now
+      };
+      reservations.set(reservation.id, reservation);
+      return reservation;
+    },
+    findById: async (id: string) => reservations.get(id) ?? null,
+    findPaginated: async () => ({
+      data: [...reservations.values()],
+      total: reservations.size
+    }),
+    update: async (id: string, input: Partial<ReservationRecord>) => {
+      const reservation = reservations.get(id);
+      if (!reservation) return null;
+      const updated = { ...reservation, ...input, id, updatedAt: now };
+      reservations.set(id, updated);
+      return updated;
+    },
+    delete: async (id: string) => reservations.delete(id),
+    findActiveBySpaceBetween: async (
+      spaceId: string,
+      startsAt: Date,
+      endsAt: Date
+    ) =>
+      [...reservations.values()].filter(
+        (reservation) =>
+          reservation.spaceId === spaceId &&
+          reservation.status === "ACTIVE" &&
+          reservation.startsAt < endsAt &&
+          reservation.endsAt > startsAt
+      ),
+    findActiveOverlaps: async (
+      spaceId: string,
+      startsAt: Date,
+      endsAt: Date,
+      excludeId?: string
+    ) =>
+      [...reservations.values()].filter(
+        (reservation) =>
+          reservation.id !== excludeId &&
+          reservation.spaceId === spaceId &&
+          reservation.status === "ACTIVE" &&
+          startsAt < reservation.endsAt &&
+          endsAt > reservation.startsAt
+      ),
+    countActiveByCustomerEmailBetween: async () => 0,
+    runInSerializableTransaction: async (operation) =>
+      operation(reservationRepository)
+  };
 
   return {
     placeRepository: {
@@ -106,60 +170,7 @@ const createRepositories = () => {
       delete: async (id: string) => spaces.delete(id),
       existsPlace: async (placeId: string) => places.has(placeId)
     },
-    reservationRepository: {
-      create: async (input: Omit<ReservationRecord, "id" | "status" | "cancelledAt" | "createdAt" | "updatedAt">) => {
-        const reservation: ReservationRecord = {
-          ...input,
-          id: randomUUID(),
-          status: "ACTIVE",
-          cancelledAt: null,
-          createdAt: now,
-          updatedAt: now
-        };
-        reservations.set(reservation.id, reservation);
-        return reservation;
-      },
-      findById: async (id: string) => reservations.get(id) ?? null,
-      findPaginated: async () => ({
-        data: [...reservations.values()],
-        total: reservations.size
-      }),
-      update: async (id: string, input: Partial<ReservationRecord>) => {
-        const reservation = reservations.get(id);
-        if (!reservation) return null;
-        const updated = { ...reservation, ...input, id, updatedAt: now };
-        reservations.set(id, updated);
-        return updated;
-      },
-      delete: async (id: string) => reservations.delete(id),
-      findActiveBySpaceBetween: async (
-        spaceId: string,
-        startsAt: Date,
-        endsAt: Date
-      ) =>
-        [...reservations.values()].filter(
-          (reservation) =>
-            reservation.spaceId === spaceId &&
-            reservation.status === "ACTIVE" &&
-            reservation.startsAt < endsAt &&
-            reservation.endsAt > startsAt
-        ),
-      findActiveOverlaps: async (
-        spaceId: string,
-        startsAt: Date,
-        endsAt: Date,
-        excludeId?: string
-      ) =>
-        [...reservations.values()].filter(
-          (reservation) =>
-            reservation.id !== excludeId &&
-            reservation.spaceId === spaceId &&
-            reservation.status === "ACTIVE" &&
-            startsAt < reservation.endsAt &&
-            endsAt > reservation.startsAt
-        ),
-      countActiveByCustomerEmailBetween: async () => 0
-    }
+    reservationRepository
   };
 };
 
@@ -315,18 +326,18 @@ describe("places and spaces routes", () => {
         place_id: placeResponse.body.id,
         space_id: spaceResponse.body.id,
         customer_email: "client@example.com",
-        starts_at: "2026-04-28T14:00:00.000Z",
-        ends_at: "2026-04-28T15:00:00.000Z"
+        starts_at: "2026-05-28T14:00:00.000Z",
+        ends_at: "2026-05-28T15:00:00.000Z"
       });
 
     const response = await request(app)
-      .get(`/api/v1/spaces/${spaceResponse.body.id}/availability?date=2026-04-28`)
+      .get(`/api/v1/spaces/${spaceResponse.body.id}/availability?date=2026-05-28`)
       .set(apiKey);
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
       space_id: spaceResponse.body.id,
-      date: "2026-04-28",
+      date: "2026-05-28",
       timezone: "America/Panama",
       office_hours: {
         opens_at: "08:00",
@@ -335,18 +346,18 @@ describe("places and spaces routes", () => {
       },
       reserved_windows: [
         {
-          starts_at: "2026-04-28T14:00:00.000Z",
-          ends_at: "2026-04-28T15:00:00.000Z"
+          starts_at: "2026-05-28T14:00:00.000Z",
+          ends_at: "2026-05-28T15:00:00.000Z"
         }
       ],
       available_windows: [
         {
-          starts_at: "2026-04-28T13:00:00.000Z",
-          ends_at: "2026-04-28T14:00:00.000Z"
+          starts_at: "2026-05-28T13:00:00.000Z",
+          ends_at: "2026-05-28T14:00:00.000Z"
         },
         {
-          starts_at: "2026-04-28T15:00:00.000Z",
-          ends_at: "2026-04-28T23:00:00.000Z"
+          starts_at: "2026-05-28T15:00:00.000Z",
+          ends_at: "2026-05-28T23:00:00.000Z"
         }
       ]
     });

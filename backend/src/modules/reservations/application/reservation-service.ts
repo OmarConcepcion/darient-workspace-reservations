@@ -25,14 +25,47 @@ export class ReservationService {
   public async create(input: CreateReservationInput): Promise<Reservation> {
     this.assertValidTimeWindow(input.startsAt, input.endsAt);
     await this.assertSpaceBelongsToPlace(input.spaceId, input.placeId);
-    await this.assertNoConflict(input.spaceId, input.startsAt, input.endsAt);
-    await this.assertWeeklyLimit(
-      input.customerEmail,
-      input.startsAt,
-      undefined
-    );
 
-    return this.withEffectiveStatus(await this.reservationRepository.create(input));
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const reservation =
+          await this.reservationRepository.runInSerializableTransaction(
+            async (reservationRepository) => {
+              await this.assertNoConflict(
+                input.spaceId,
+                input.startsAt,
+                input.endsAt,
+                undefined,
+                reservationRepository
+              );
+              await this.assertWeeklyLimit(
+                input.customerEmail,
+                input.startsAt,
+                undefined,
+                reservationRepository
+              );
+
+              return reservationRepository.create(input);
+            }
+          );
+
+        return this.withEffectiveStatus(reservation);
+      } catch (error) {
+        if (!isRetryableTransactionError(error)) {
+          throw error;
+        }
+
+        if (attempt === 1) {
+          await this.resolveCreateConflictAfterRetryableFailure(input);
+        }
+      }
+    }
+
+    throw new AppError(
+      500,
+      "INTERNAL_SERVER_ERROR",
+      "Unexpected error while creating reservation."
+    );
   }
 
   public async list(input: ReservationListInput): Promise<ReservationPage> {
@@ -240,9 +273,11 @@ export class ReservationService {
     spaceId: string,
     startsAt: Date,
     endsAt: Date,
-    excludeReservationId?: string
+    excludeReservationId?: string,
+    reservationRepository: Pick<ReservationRepository, "findActiveOverlaps"> = this
+      .reservationRepository
   ): Promise<void> {
-    const overlaps = await this.reservationRepository.findActiveOverlaps(
+    const overlaps = await reservationRepository.findActiveOverlaps(
       spaceId,
       startsAt,
       endsAt,
@@ -304,16 +339,19 @@ export class ReservationService {
   private async assertWeeklyLimit(
     customerEmail: string,
     startsAt: Date,
-    excludeReservationId?: string
+    excludeReservationId?: string,
+    reservationRepository: Pick<
+      ReservationRepository,
+      "countActiveByCustomerEmailBetween"
+    > = this.reservationRepository
   ): Promise<void> {
     const weekRange = getPanamaWeekRange(startsAt);
-    const activeCount =
-      await this.reservationRepository.countActiveByCustomerEmailBetween(
-        customerEmail,
-        weekRange.startsAt,
-        weekRange.endsAt,
-        excludeReservationId
-      );
+    const activeCount = await reservationRepository.countActiveByCustomerEmailBetween(
+      customerEmail,
+      weekRange.startsAt,
+      weekRange.endsAt,
+      excludeReservationId
+    );
 
     if (activeCount >= MAX_ACTIVE_WEEKLY_RESERVATIONS) {
       throw new AppError(
@@ -337,7 +375,30 @@ export class ReservationService {
 
     return reservation;
   }
+
+  private async resolveCreateConflictAfterRetryableFailure(
+    input: CreateReservationInput
+  ): Promise<never> {
+    try {
+      await this.assertNoConflict(input.spaceId, input.startsAt, input.endsAt);
+      await this.assertWeeklyLimit(input.customerEmail, input.startsAt);
+    } catch (error) {
+      throw error;
+    }
+
+    throw new AppError(
+      409,
+      "RESERVATION_CONFLICT",
+      "Reservation creation conflicted with another concurrent request. Please retry."
+    );
+  }
 }
+
+const isRetryableTransactionError = (error: unknown): boolean =>
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  error.code === "P2034";
 
 const getDayOfWeek = (date: string, timezone: string): number => {
   const noon = zonedDateTimeToUtc(date, "12:00", timezone);

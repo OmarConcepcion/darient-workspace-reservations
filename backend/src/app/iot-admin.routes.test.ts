@@ -153,7 +153,9 @@ const createDependencies = () => {
     delete: async () => false,
     findActiveOverlaps: async () => [],
     findActiveBySpaceBetween: async () => [],
-    countActiveByCustomerEmailBetween: async () => 0
+    countActiveByCustomerEmailBetween: async () => 0,
+    runInSerializableTransaction: async (operation) =>
+      operation(reservationRepository)
   };
 
   return {

@@ -84,10 +84,11 @@ const createRepository = (initialReservations: Reservation[] = []) => {
           reservation.status === "ACTIVE" &&
           reservation.startsAt >= startsAt &&
           reservation.startsAt < endsAt
-      ).length
+      ).length,
+    runInSerializableTransaction: async (operation) => operation(repository)
   };
 
-  return repository;
+  return { repository, reservations };
 };
 
 const createSpaceRepository = (spaceId: string, placeId: string) =>
@@ -149,7 +150,7 @@ describe("ReservationService", () => {
       endsAt: new Date("2026-04-28T15:00:00.000Z")
     });
     const service = new ReservationService(
-      createRepository([existing]),
+      createRepository([existing]).repository,
       createSpaceRepository(spaceId, placeId),
       createPlaceRepository(placeId),
       () => fixedNow
@@ -198,7 +199,7 @@ describe("ReservationService", () => {
       })
     );
     const service = new ReservationService(
-      createRepository(existingReservations),
+      createRepository(existingReservations).repository,
       createSpaceRepository(spaceId, placeId),
       createPlaceRepository(placeId),
       () => fixedNow
@@ -220,7 +221,7 @@ describe("ReservationService", () => {
     const spaceId = randomUUID();
     const reservation = createReservation({ placeId, spaceId });
     const service = new ReservationService(
-      createRepository([reservation]),
+      createRepository([reservation]).repository,
       createSpaceRepository(spaceId, placeId),
       createPlaceRepository(placeId),
       () => fixedNow
@@ -239,7 +240,7 @@ describe("ReservationService", () => {
       status: "ACTIVE"
     });
     const service = new ReservationService(
-      createRepository([expiredReservation]),
+      createRepository([expiredReservation]).repository,
       createSpaceRepository(expiredReservation.spaceId, expiredReservation.placeId),
       createPlaceRepository(expiredReservation.placeId),
       () => fixedNow
@@ -259,7 +260,7 @@ describe("ReservationService", () => {
       status: "CANCELLED",
       cancelledAt: fixedNow
     });
-    const repository = createRepository([reservation]);
+    const { repository } = createRepository([reservation]);
     const service = new ReservationService(
       repository,
       createSpaceRepository(spaceId, placeId),
@@ -279,7 +280,7 @@ describe("ReservationService", () => {
     const spaceId = randomUUID();
     const reservation = createReservation({ placeId, spaceId, status: "ACTIVE" });
     const service = new ReservationService(
-      createRepository([reservation]),
+      createRepository([reservation]).repository,
       createSpaceRepository(spaceId, placeId),
       createPlaceRepository(placeId),
       () => fixedNow
@@ -300,7 +301,7 @@ describe("ReservationService", () => {
       endsAt: new Date("2026-04-28T15:00:00.000Z")
     });
     const service = new ReservationService(
-      createRepository([existing]),
+      createRepository([existing]).repository,
       createSpaceRepository(spaceId, placeId),
       createPlaceRepository(placeId),
       () => fixedNow
@@ -335,5 +336,53 @@ describe("ReservationService", () => {
         }
       ]
     });
+  });
+
+  it("retries a serialization failure and returns a conflict if another request wins", async () => {
+    const placeId = randomUUID();
+    const spaceId = randomUUID();
+    const competingReservation = createReservation({
+      placeId,
+      spaceId,
+      customerEmail: "winner@example.com",
+      startsAt: new Date("2026-04-28T14:00:00.000Z"),
+      endsAt: new Date("2026-04-28T15:00:00.000Z")
+    });
+    const { repository, reservations } = createRepository();
+    let attempts = 0;
+
+    repository.runInSerializableTransaction = async (operation) => {
+      attempts += 1;
+
+      if (attempts === 1) {
+        reservations.push(competingReservation);
+        throw Object.assign(new Error("write conflict"), {
+          code: "P2034"
+        });
+      }
+
+      return operation(repository);
+    };
+
+    const service = new ReservationService(
+      repository,
+      createSpaceRepository(spaceId, placeId),
+      createPlaceRepository(placeId),
+      () => fixedNow
+    );
+
+    await expect(
+      service.create({
+        placeId,
+        spaceId,
+        customerEmail: "contender@example.com",
+        startsAt: new Date("2026-04-28T14:00:00.000Z"),
+        endsAt: new Date("2026-04-28T15:00:00.000Z")
+      })
+    ).rejects.toMatchObject({
+      code: "RESERVATION_CONFLICT"
+    });
+
+    expect(attempts).toBe(2);
   });
 });
