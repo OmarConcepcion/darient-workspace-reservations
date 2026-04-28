@@ -1,196 +1,203 @@
 # Darient Workspace Reservations
 
-Sistema full-stack para gestión de reservas de espacios de trabajo con integración IoT mediante MQTT.
-
-El proyecto se trabajará con **Spec-Driven Development (SDD) with AI**: primero se documentan requerimientos, decisiones y contratos; luego se implementa.
+Sistema full-stack para gestionar reservas de espacios de trabajo y monitoreo IoT en tiempo real sobre MQTT + SSE.
 
 ## Estado actual
 
-Backend + frontend completos para reservas y monitoreo IoT en tiempo real:
+- Backend Express/TypeScript expuesto en `/api/v1` con Swagger en `/api/v1/docs`.
+- Frontend React/Vite con flujos de spaces, reservations, help y dashboard administrativo IoT.
+- Creación de reservas endurecida contra concurrencia con transacción Prisma serializable, revalidación interna y retry único.
+- Reglas activas de reservas:
+  - sin solapamientos `ACTIVE` por `space_id`
+  - máximo 3 reservas activas por `customer_email` por semana
+  - cancelación obligatoria antes de eliminar
+- Backend verificado con 32 tests; frontend verificado con 39 tests.
+
+## Stack
 
 ### Backend
 
-- Express/TypeScript en `/api/v1`.
-- Health endpoint, Swagger/OpenAPI con cobertura completa de endpoints, API key middleware, Pino logging y error handler estándar.
-- Prisma multi-schema con `core`, `iot` y `audit`.
-- Seed inicial para `SITE_A`, `OFFICE_1` y `OFFICE_2`.
-- CRUD core de places, spaces y reservations.
-- Reglas de reservas: conflicto de horario, máximo 3 activas por cliente por semana, cancelación, eliminación solo después de cancelar y expiración dinámica.
-- Disponibilidad diaria por espacio calculada desde office hours y reservas activas.
-- Procesamiento backend de tópicos `telemetry` y `reported`.
-- Endpoints admin IoT, publicación de `desired` por MQTT, stream SSE y manejo explícito de error `502` si falla el publish.
-- Runtime MQTT compartido con startup/shutdown ordenado y logs operativos.
-- Suite real de integración backend IoT contra API + MQTT + PostgreSQL.
-
-### Frontend
-
-- Vite/React 19 con React Router, Axios, TanStack Query, Tailwind v4, Sonner y MSW.
-- Sistema visual indigo con primitivos compartidos en `src/shared/ui` (Button, Card, Badge, EmptyState, ErrorState, PageHeader, Skeleton, iconos inline).
-- Spaces: lista y detalle con loading/empty/error, calendario diario de disponibilidad y animaciones con Motion.
-- Reservations: lista paginada clickeable, detalle propio, cancelación con modal, eliminación solo para reservas canceladas, formulario RHF + Zod con selectores cascading place → space, una sola fecha de reserva, rango horario visual y conversión a `starts_at` / `ends_at` ISO UTC.
-- Help: página `/help` enlazada desde el header junto al indicador IoT con acceso a Swagger.
-- Admin dashboard: monitoring snapshot, stat cards, Recharts live chart, panel desired vs reported, RHF form de control de dispositivo, alerts table.
-- SSE consumido vía `fetch` + `ReadableStream` (para enviar `x-api-key`) con reconexión exponencial y refresh inteligente de queries.
-- Code splitting por ruta (`React.lazy`) — admin/reservations son chunks independientes.
-- 25 tests con Vitest + RTL + MSW cubriendo happy paths, validación de formularios, errores normalizados y parsing SSE.
-
-### Infraestructura
-
-- Docker Compose raíz con backend, frontend, PostgreSQL, MQTT y simulador IoT como caja negra.
-
-## Stack aprobado
-
-### Backend
-- Node.js + Express + TypeScript
-- Hexagonal Architecture / Ports & Adapters
-- PostgreSQL + Prisma
-- Zod para validación
-- mqtt.js para MQTT
-- SSE para tiempo real
-- Pino para logs
-- Swagger/OpenAPI con `swagger-jsdoc` + `swagger-ui-express`
+- Node.js
+- Express
+- TypeScript
+- PostgreSQL
+- Prisma
+- Zod
+- mqtt.js
+- SSE
+- Pino
+- Swagger/OpenAPI
 - Vitest + Supertest
 
 ### Frontend
-- React + TypeScript + Vite
-- Feature-Based Architecture
+
+- React 19
+- TypeScript
+- Vite
 - React Router
-- Axios centralizado
+- Axios
 - TanStack Query
 - React Hook Form + Zod
-- Tailwind CSS
-- Motion for React
+- Tailwind CSS v4
+- Motion
 - Sonner
 - Recharts
 - Vitest + React Testing Library + MSW
 
-### Infraestructura
-- Docker Compose raíz
-- PostgreSQL
-- Mosquitto MQTT
-- `iot-simulator` como black box dentro del mismo cluster Docker
+### Infra
 
-## Convenciones
+- Docker Compose
+- PostgreSQL 16
+- Eclipse Mosquitto
+- `iot-simulator` como black box
 
-| Área | Decisión |
-|---|---|
-| Código TypeScript | `camelCase` |
-| Modelos/dominio | Inglés |
-| Tablas DB | `snake_case` |
-| Columnas DB | `snake_case` |
-| Endpoints REST | `snake_case` |
-| API base path | `/api/v1` |
-| API Key header | `x-api-key` |
-| Fechas API | ISO 8601 UTC |
-| Timezone default | `America/Panama` |
+## Requisitos previos
 
-## Arquitectura
+- Node.js 22+
+- npm 10+
+- Docker y Docker Compose
 
-Backend:
+## Variables de entorno
 
-```txt
-REST / MQTT / SSE adapters
-        ↓
-Application use cases
-        ↓
-Domain rules
-        ↓
-Ports
-        ↓
-Infrastructure adapters: Prisma, MQTT, SSE, Logger
+El workspace usa variables por app; no existe `.env` en la raíz.
+
+### Backend
+
+Archivo base: [backend/.env.example](/Users/omarconcepcion/Documents/Side Project/Mini-Project/darient-workspace-reservations/backend/.env.example)
+
+Variables principales:
+
+- `API_KEY`
+- `DATABASE_URL`
+- `MQTT_URL`
+- `CORS_ORIGIN`
+
+### Frontend
+
+Archivo base: [frontend/.env.example](/Users/omarconcepcion/Documents/Side Project/Mini-Project/darient-workspace-reservations/frontend/.env.example)
+
+Variables principales:
+
+- `VITE_API_URL`
+- `VITE_API_KEY`
+
+### Inicializar `.env`
+
+```bash
+npm install --prefix backend
+npm install --prefix frontend
+npm run setup:env
 ```
 
-Frontend:
+## Levantar con Docker Compose
 
-```txt
-src/
-  app/
-  shared/
-  features/
-    spaces/
-    reservations/
-    admin_dashboard/
-    telemetry/
+```bash
+npm run docker:up
 ```
-
-## Base de datos
-
-PostgreSQL schemas:
-
-```txt
-core   -> places, spaces, reservations, office_hours
-iot    -> telemetry_aggregations, device_desired, device_reported, alerts
-audit  -> raw_telemetry
-```
-
-## IoT
-
-El `iot-simulator` no se modifica. Se ejecuta como contenedor dentro del mismo `docker-compose`, pero se integra únicamente por MQTT.
-
-Mapeo:
-
-```txt
-site   = place
-office = space
-```
-
-Tópicos:
-
-```txt
-sites/+/offices/+/telemetry
-sites/+/offices/+/reported
-sites/{site_id}/offices/{office_id}/desired
-```
-
-Eventos SSE públicos:
-
-```txt
-telemetry_updated
-alert_updated
-device_reported_updated
-```
-
-Reglas temporales de alertas implementadas:
-
-```txt
-CO2: abrir 5 min > threshold, resolver 2 min <= threshold
-OCCUPANCY_MAX: abrir 2 min > capacity, resolver 1 min <= capacity
-OCCUPANCY_UNEXPECTED: abrir 10 min ocupación inesperada, resolver 5 min en 0 o vuelta a condición válida
-```
-
-## Docker esperado
 
 Servicios:
 
-```txt
-darient_backend
-darient_frontend
-darient_postgres
-darient_mqtt
-darient_iot_simulator
+- backend: `http://localhost:3000`
+- frontend: `http://localhost:5173`
+- postgres: `localhost:5432`
+- mqtt: `localhost:1883`
+
+El backend del contenedor ejecuta automáticamente:
+
+- `prisma generate`
+- `prisma migrate deploy`
+- `prisma seed`
+
+Para apagar:
+
+```bash
+npm run docker:down
 ```
 
-Red:
+## Levantar manualmente
 
-```txt
-darient_network
+### Backend
+
+```bash
+cd backend
+npm install
+npm run setup:env
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
+npm run dev
 ```
 
-Puertos:
+### Frontend
 
-```txt
-backend: 3000
-frontend: 5173
-postgres: 5432
-mqtt: 1883
+```bash
+cd frontend
+npm install
+npm run setup:env
+npm run dev
 ```
 
-## Endpoints principales
+## Migraciones y seed
+
+Desde la raíz:
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+## Scripts de validación
+
+### Raíz
+
+```bash
+npm run build
+npm run test
+npm run typecheck
+```
+
+### Backend
+
+```bash
+cd backend
+npm run build
+npm run test
+npm run typecheck
+npm run test:iot:real
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm run build
+npm run test
+npm run typecheck
+```
+
+No existe `lint` en esta entrega porque el repositorio todavía no tiene configuración ESLint y agregar tooling nuevo aquí metería complejidad innecesaria.
+
+## API key
+
+Todas las rutas protegidas requieren:
 
 ```http
-GET /api/v1/health
-GET /api/v1/docs
+x-api-key: <API_KEY>
 ```
+
+En Docker local el valor por defecto es:
+
+```txt
+darient_dev_key
+```
+
+## Swagger y endpoints
+
+- Swagger UI: [http://localhost:3000/api/v1/docs](http://localhost:3000/api/v1/docs)
+- Health: [http://localhost:3000/api/v1/health](http://localhost:3000/api/v1/health)
+
+Endpoints principales:
 
 ```http
 GET    /api/v1/places
@@ -210,111 +217,77 @@ DELETE /api/v1/spaces/:space_id
 ```
 
 ```http
-GET   /api/v1/reservations?page=1&page_size=10
-GET   /api/v1/reservations/:reservation_id
-POST  /api/v1/reservations
-PATCH /api/v1/reservations/:reservation_id
-PATCH /api/v1/reservations/:reservation_id/cancel
+GET    /api/v1/reservations?page=1&page_size=10
+GET    /api/v1/reservations/:reservation_id
+POST   /api/v1/reservations
+PATCH  /api/v1/reservations/:reservation_id
+PATCH  /api/v1/reservations/:reservation_id/cancel
 DELETE /api/v1/reservations/:reservation_id
 ```
 
 ```http
-GET   /api/v1/admin/spaces/:space_id/monitoring
-GET   /api/v1/admin/spaces/:space_id/alerts
-PATCH /api/v1/admin/spaces/:space_id/device_desired
-GET   /api/v1/admin/events/stream
+GET    /api/v1/admin/spaces/:space_id/monitoring
+GET    /api/v1/admin/spaces/:space_id/alerts
+PATCH  /api/v1/admin/spaces/:space_id/device_desired
+GET    /api/v1/admin/events/stream
 ```
 
-Si falla la publicación MQTT de `device_desired`, el backend responde `502` con el formato estándar de error.
+## Cómo probar el flujo principal de reservas
 
-## Reglas de reservas
+1. Crear un `place`.
+2. Crear un `space` asociado.
+3. Consultar disponibilidad diaria en `/spaces/:space_id/availability`.
+4. Crear una reserva con `POST /reservations`.
+5. Intentar crear otra superpuesta para verificar `409 RESERVATION_CONFLICT`.
+6. Cancelar con `/reservations/:reservation_id/cancel`.
+7. Eliminar con `DELETE /reservations/:reservation_id`.
 
-- El requerimiento original permitía eliminar reservas; la decisión actual es exigir cancelar primero y permitir eliminación solo si `status = CANCELLED`.
-- Cancelar cambia `status = CANCELLED`.
-- Eliminar una reserva `ACTIVE` o `EXPIRED` responde `409 RESERVATION_MUST_BE_CANCELLED_BEFORE_DELETE`.
-- Estados: `ACTIVE`, `CANCELLED`, `EXPIRED`.
-- Expiración se calcula dinámicamente al listar/detallar para MVP.
-- No puede existir solapamiento para el mismo espacio.
-- Máximo 3 reservas activas por cliente por semana.
-- Los conflictos al crear/actualizar incluyen `error.details.available_windows` con ventanas disponibles para el día seleccionado.
+## Cómo funciona el blindaje de concurrencia
 
-Regla de conflicto:
+La creación de reservas se ejecuta dentro de una transacción Prisma con aislamiento serializable.
+
+Dentro de la misma transacción se revalidan:
+
+- conflicto de horario
+- límite semanal
+- creación efectiva de la reserva
+
+Si PostgreSQL/Prisma reporta conflicto serializable, el backend reintenta una vez. Si otra request ya ganó la carrera, la API responde `409` con el formato de error existente.
+
+## IoT, MQTT y SSE
+
+Tópicos MQTT:
 
 ```txt
-new_start < existing_end
-AND new_end > existing_start
-AND same_space
-AND status = ACTIVE
+sites/+/offices/+/telemetry
+sites/+/offices/+/reported
+sites/{site_id}/offices/{office_id}/desired
 ```
 
-## Comandos sugeridos
-
-```bash
-npm install --prefix backend
-npm install --prefix frontend
-npm run setup:env
-```
-
-`npm run setup:env` en la raíz solo inicializa `backend/.env` y `frontend/.env`. Este workspace ya no usa un `.env` en la raíz.
-
-Backend:
-
-```bash
-cd backend
-npm install
-npm run setup:env
-npm run prisma:migrate
-npm run prisma:seed
-npm run dev
-npm test
-npm run test:iot:real
-```
-
-Raíz:
-
-```bash
-npm run build
-npm test
-npm run docker:up
-```
-
-Docker:
-
-```bash
-docker compose up --build
-```
-
-El backend en Docker usa:
+Eventos SSE:
 
 ```txt
-DATABASE_URL=postgresql://darient:darient@darient_postgres:5432/darient?schema=core
-MQTT_URL=mqtt://darient_mqtt:1883
+telemetry_updated
+alert_updated
+device_reported_updated
 ```
 
-Frontend:
+Flujo esperado:
 
-```bash
-cd frontend
-npm install
-npm run setup:env
-npm run dev
-npm test
-```
+1. El simulador publica `telemetry` y `reported`.
+2. El backend persiste/agrega datos y emite SSE.
+3. El frontend administrativo consume SSE con `fetch` + `ReadableStream`.
+4. El administrador puede publicar `device_desired` por REST; si falla el publish MQTT, la API responde `502`.
 
-## Documentación
+## Documentación relacionada
 
-Versionados:
+- [AI.md](/Users/omarconcepcion/Documents/Side Project/Mini-Project/darient-workspace-reservations/AI.md)
+- [AGENTS.md](/Users/omarconcepcion/Documents/Side Project/Mini-Project/darient-workspace-reservations/AGENTS.md)
+- [docs/api_contract.md](/Users/omarconcepcion/Documents/Side Project/Mini-Project/darient-workspace-reservations/docs/api_contract.md)
+- [docs/iot_contract.md](/Users/omarconcepcion/Documents/Side Project/Mini-Project/darient-workspace-reservations/docs/iot_contract.md)
 
-```txt
-README.md
-AI.md
-AGENTS.md
-```
+## Limitaciones conocidas
 
-Locales por ahora y en `.gitignore`:
-
-```txt
-docs/
-backend/docs/
-frontend/docs/
-```
+- No hay script `lint` todavía; falta introducir y acordar configuración ESLint.
+- El build del frontend sigue emitiendo un warning de chunk grande para una porción lazy del dashboard.
+- Los tests del dashboard muestran warnings de tamaño de contenedor de Recharts en JSDOM, pero no fallan la suite.

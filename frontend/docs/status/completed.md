@@ -54,5 +54,6 @@
 - [x] Space detail daily availability calendar added with available/reserved windows.
 - [x] Help route added with Swagger link and header action beside IoT status.
 - [x] SSE parser unit tests covering chunked reassembly, comments and error responses.
-- [x] Route-level code splitting via `React.lazy`; initial JS bundle reduced from ~1014 kB to 375 kB.
+- [x] Route-level code splitting via `React.lazy` para reservations y admin dashboard.
 - [x] Phase docs renamed/badged through Phase 05; root README and AI.md refreshed with frontend deliverables.
+- [x] Frontend package exposes `typecheck` for local and root-level validation.

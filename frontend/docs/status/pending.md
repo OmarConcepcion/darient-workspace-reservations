@@ -1,17 +1,9 @@
 # Frontend Pending Tasks
 
-- [x] Initialize frontend project.
-- [x] Configure React Router.
-- [x] Configure Axios.
-- [x] Configure TanStack Query.
-- [x] Configure Tailwind.
-- [x] Configure Sonner.
-- [x] Configure Motion.
-- [x] Configure Recharts.
-- [x] Build layout.
-- [x] Build spaces feature.
-- [x] Build reservations feature.
-- [x] Update reservation create flow to single-day date + hourly range selection with visual availability reference.
-- [x] Build admin dashboard.
-- [x] Connect SSE.
-- [x] Add tests.
+No hay pendientes críticos frontend para la entrega actual.
+
+## Limitaciones conocidas
+
+- No existe `lint` frontend porque todavía no hay configuración ESLint en el repo.
+- El build sigue reportando un warning de chunk grande en una parte lazy del dashboard.
+- Recharts emite warnings de tamaño de contenedor en JSDOM durante pruebas, sin romper la suite.

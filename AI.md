@@ -92,9 +92,10 @@ Este documento debe actualizarse si la AI se usa para generar código, tests o d
 | Frontend Reservations (Phase 03) | Reservations con TanStack mutations, RHF + Zod, paginación, cancel + Sonner toasts |
 | Frontend Design system | `shared/ui` (Button, Card, Badge, EmptyState, ErrorState, PageHeader, Skeleton, iconos inline) e indigo brand tokens; fix de cascade `@layer` para utilidades sobre links |
 | Frontend Admin Dashboard (Phase 04) | Monitoring snapshot + alerts + device desired/reported, RHF form de control, Recharts live chart y SSE consumido vía `fetch` + `ReadableStream` con reconexión |
-| Frontend Tests & Docs (Phase 05) | Tests SSE parser, code splitting con `React.lazy` para reservations y admin (initial bundle 1014 → 375 KB), docs y phase status actualizados |
+| Frontend Tests & Docs (Phase 05) | Tests SSE parser, code splitting con `React.lazy` para reservations y admin, docs y phase status actualizados |
 | Reservation workflow update | Delete permitido solo después de cancelar, detalle de reserva, modal reutilizable, horarios completos, sugerencias de disponibilidad y calendario diario por Space |
 | Reservation single-day time range | Formulario de reserva con una sola fecha, hora inicio/fin, timeline visual de disponibilidad y payload ISO compatible con el backend actual |
 | Help + Docs alignment | Página `/help` con enlace a Swagger, actualización de contracts, requirements, status y fases raíz completadas |
 | OpenAPI coverage fix | Swagger/OpenAPI documenta health, places, spaces, reservations y admin IoT con schemas compartidos, errores reutilizables y contrato SSE |
 | Environment ownership cleanup | Se eliminó el `.env` de la raíz, el setup del workspace ahora solo inicializa `backend/.env` y `frontend/.env`, y la documentación quedó alineada al ownership por app |
+| Reservation delivery hardening | Creación de reservas endurecida con transacción serializable + retry, tests backend estabilizados frente al reloj actual y scripts `typecheck` agregados en raíz/backend/frontend |

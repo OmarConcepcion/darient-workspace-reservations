@@ -38,9 +38,11 @@
 - [x] Reservation deletion implemented with cancel-first guard.
 - [x] Space daily availability endpoint implemented.
 - [x] Reservation conflict errors include available windows.
+- [x] Reservation creation now revalidates overlap and weekly limit inside a serializable Prisma transaction with one retry for write conflicts.
 - [x] Swagger/OpenAPI now exposes all public backend endpoints with shared schemas, auth and key error contracts.
 - [x] Reservation detail route, reusable destructive-action modal and full date/time ranges implemented.
 - [x] Space detail daily availability calendar implemented.
 - [x] Help page with Swagger link implemented.
 - [x] Reservation create flow updated to use one day plus hourly range with visual availability reference.
 - [x] Root environment files removed; workspace env setup now initializes only backend and frontend app environments.
+- [x] Root, backend and frontend scripts now expose `typecheck`.
