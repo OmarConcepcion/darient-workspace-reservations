@@ -11,7 +11,7 @@ Backend + frontend completos para reservas y monitoreo IoT en tiempo real:
 ### Backend
 
 - Express/TypeScript en `/api/v1`.
-- Health endpoint, Swagger, API key middleware, Pino logging y error handler estándar.
+- Health endpoint, Swagger/OpenAPI con cobertura completa de endpoints, API key middleware, Pino logging y error handler estándar.
 - Prisma multi-schema con `core`, `iot` y `audit`.
 - Seed inicial para `SITE_A`, `OFFICE_1` y `OFFICE_2`.
 - CRUD core de places, spaces y reservations.
