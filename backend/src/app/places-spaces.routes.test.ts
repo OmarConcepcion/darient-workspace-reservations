@@ -27,11 +27,25 @@ type SpaceRecord = {
   updatedAt: Date;
 };
 
+type ReservationRecord = {
+  id: string;
+  placeId: string;
+  spaceId: string;
+  customerEmail: string;
+  startsAt: Date;
+  endsAt: Date;
+  status: "ACTIVE" | "CANCELLED" | "EXPIRED";
+  cancelledAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 const now = new Date("2026-04-27T12:00:00.000Z");
 
 const createRepositories = () => {
   const places = new Map<string, PlaceRecord>();
   const spaces = new Map<string, SpaceRecord>();
+  const reservations = new Map<string, ReservationRecord>();
 
   return {
     placeRepository: {
@@ -69,6 +83,19 @@ const createRepositories = () => {
       },
       findAll: async () => [...spaces.values()],
       findById: async (id: string) => spaces.get(id) ?? null,
+      findOfficeHour: async (spaceId: string, dayOfWeek: number) =>
+        spaces.has(spaceId) && dayOfWeek >= 1 && dayOfWeek <= 5
+          ? {
+              id: randomUUID(),
+              spaceId,
+              dayOfWeek,
+              opensAt: "08:00",
+              closesAt: "18:00",
+              isEnabled: true,
+              createdAt: now,
+              updatedAt: now
+            }
+          : null,
       update: async (id: string, input: Partial<SpaceRecord>) => {
         const space = spaces.get(id);
         if (!space) return null;
@@ -78,6 +105,60 @@ const createRepositories = () => {
       },
       delete: async (id: string) => spaces.delete(id),
       existsPlace: async (placeId: string) => places.has(placeId)
+    },
+    reservationRepository: {
+      create: async (input: Omit<ReservationRecord, "id" | "status" | "cancelledAt" | "createdAt" | "updatedAt">) => {
+        const reservation: ReservationRecord = {
+          ...input,
+          id: randomUUID(),
+          status: "ACTIVE",
+          cancelledAt: null,
+          createdAt: now,
+          updatedAt: now
+        };
+        reservations.set(reservation.id, reservation);
+        return reservation;
+      },
+      findById: async (id: string) => reservations.get(id) ?? null,
+      findPaginated: async () => ({
+        data: [...reservations.values()],
+        total: reservations.size
+      }),
+      update: async (id: string, input: Partial<ReservationRecord>) => {
+        const reservation = reservations.get(id);
+        if (!reservation) return null;
+        const updated = { ...reservation, ...input, id, updatedAt: now };
+        reservations.set(id, updated);
+        return updated;
+      },
+      delete: async (id: string) => reservations.delete(id),
+      findActiveBySpaceBetween: async (
+        spaceId: string,
+        startsAt: Date,
+        endsAt: Date
+      ) =>
+        [...reservations.values()].filter(
+          (reservation) =>
+            reservation.spaceId === spaceId &&
+            reservation.status === "ACTIVE" &&
+            reservation.startsAt < endsAt &&
+            reservation.endsAt > startsAt
+        ),
+      findActiveOverlaps: async (
+        spaceId: string,
+        startsAt: Date,
+        endsAt: Date,
+        excludeId?: string
+      ) =>
+        [...reservations.values()].filter(
+          (reservation) =>
+            reservation.id !== excludeId &&
+            reservation.spaceId === spaceId &&
+            reservation.status === "ACTIVE" &&
+            startsAt < reservation.endsAt &&
+            endsAt > reservation.startsAt
+        ),
+      countActiveByCustomerEmailBetween: async () => 0
     }
   };
 };
@@ -200,5 +281,74 @@ describe("places and spaces routes", () => {
 
     expect(response.status).toBe(404);
     expect(response.body.error.code).toBe("PLACE_NOT_FOUND");
+  });
+
+  it("returns daily availability for a space", async () => {
+    const repositories = createRepositories();
+    const app = createApp(repositories);
+
+    const placeResponse = await request(app)
+      .post("/api/v1/places")
+      .set(apiKey)
+      .send({
+        iot_site_id: "SITE_E",
+        name: "HQ",
+        latitude: 8.95,
+        longitude: -79.55,
+        timezone: "America/Panama"
+      });
+
+    const spaceResponse = await request(app)
+      .post("/api/v1/spaces")
+      .set(apiKey)
+      .send({
+        place_id: placeResponse.body.id,
+        iot_office_id: "OFFICE_11",
+        name: "Focus Room",
+        capacity: 4
+      });
+
+    await request(app)
+      .post("/api/v1/reservations")
+      .set(apiKey)
+      .send({
+        place_id: placeResponse.body.id,
+        space_id: spaceResponse.body.id,
+        customer_email: "client@example.com",
+        starts_at: "2026-04-28T14:00:00.000Z",
+        ends_at: "2026-04-28T15:00:00.000Z"
+      });
+
+    const response = await request(app)
+      .get(`/api/v1/spaces/${spaceResponse.body.id}/availability?date=2026-04-28`)
+      .set(apiKey);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      space_id: spaceResponse.body.id,
+      date: "2026-04-28",
+      timezone: "America/Panama",
+      office_hours: {
+        opens_at: "08:00",
+        closes_at: "18:00",
+        is_enabled: true
+      },
+      reserved_windows: [
+        {
+          starts_at: "2026-04-28T14:00:00.000Z",
+          ends_at: "2026-04-28T15:00:00.000Z"
+        }
+      ],
+      available_windows: [
+        {
+          starts_at: "2026-04-28T13:00:00.000Z",
+          ends_at: "2026-04-28T14:00:00.000Z"
+        },
+        {
+          starts_at: "2026-04-28T15:00:00.000Z",
+          ends_at: "2026-04-28T23:00:00.000Z"
+        }
+      ]
+    });
   });
 });

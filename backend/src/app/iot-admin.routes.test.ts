@@ -138,6 +138,7 @@ const createDependencies = () => {
     },
     findAll: async () => [],
     findById: async () => null,
+    findOfficeHour: async () => null,
     update: async () => null,
     delete: async () => false
   };
@@ -149,7 +150,9 @@ const createDependencies = () => {
     findById: async () => null,
     findPaginated: async () => ({ data: [], total: 0 }),
     update: async () => null,
+    delete: async () => false,
     findActiveOverlaps: async () => [],
+    findActiveBySpaceBetween: async () => [],
     countActiveByCustomerEmailBetween: async () => 0
   };
 

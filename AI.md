@@ -23,6 +23,8 @@ La AI ayudó a:
 - Endurecer lifecycle MQTT/SSE del backend y agregar pruebas reales de integración IoT.
 - Implementar features frontend de spaces, reservations y admin dashboard sobre la arquitectura feature-based.
 - Diseñar el sistema visual con acento indigo, primitivos compartidos y consumo SSE vía `fetch` + `ReadableStream`.
+- Alinear documentación SDD con el código real y extender el flujo de reservas con detalle, confirmaciones, disponibilidad y eliminación segura.
+- Corregir el formulario de reservas para trabajar con una sola fecha y rango horario visual sin cambiar el backend.
 
 ## Decisiones tomadas con apoyo de AI
 
@@ -91,4 +93,7 @@ Este documento debe actualizarse si la AI se usa para generar código, tests o d
 | Frontend Design system | `shared/ui` (Button, Card, Badge, EmptyState, ErrorState, PageHeader, Skeleton, iconos inline) e indigo brand tokens; fix de cascade `@layer` para utilidades sobre links |
 | Frontend Admin Dashboard (Phase 04) | Monitoring snapshot + alerts + device desired/reported, RHF form de control, Recharts live chart y SSE consumido vía `fetch` + `ReadableStream` con reconexión |
 | Frontend Tests & Docs (Phase 05) | Tests SSE parser, code splitting con `React.lazy` para reservations y admin (initial bundle 1014 → 375 KB), docs y phase status actualizados |
+| Reservation workflow update | Delete permitido solo después de cancelar, detalle de reserva, modal reutilizable, horarios completos, sugerencias de disponibilidad y calendario diario por Space |
+| Reservation single-day time range | Formulario de reserva con una sola fecha, hora inicio/fin, timeline visual de disponibilidad y payload ISO compatible con el backend actual |
+| Help + Docs alignment | Página `/help` con enlace a Swagger, actualización de contracts, requirements, status y fases raíz completadas |
 | OpenAPI coverage fix | Swagger/OpenAPI documenta health, places, spaces, reservations y admin IoT con schemas compartidos, errores reutilizables y contrato SSE |

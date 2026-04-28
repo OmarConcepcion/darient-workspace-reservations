@@ -37,6 +37,35 @@ describe("SpaceDetailView", () => {
           created_at: "2026-04-27T10:00:00.000Z",
           updated_at: "2026-04-27T10:00:00.000Z"
         })
+      ),
+      http.get(`${TEST_API_BASE_URL}/spaces/${SPACE_ID}/availability`, () =>
+        HttpResponse.json({
+          space_id: SPACE_ID,
+          date: "2026-04-27",
+          timezone: "America/Panama",
+          office_hours: {
+            opens_at: "08:00",
+            closes_at: "18:00",
+            is_enabled: true
+          },
+          reserved_windows: [
+            {
+              reservation_id: "33333333-3333-3333-3333-333333333333",
+              starts_at: "2026-04-27T14:00:00.000Z",
+              ends_at: "2026-04-27T15:00:00.000Z"
+            }
+          ],
+          available_windows: [
+            {
+              starts_at: "2026-04-27T13:00:00.000Z",
+              ends_at: "2026-04-27T14:00:00.000Z"
+            },
+            {
+              starts_at: "2026-04-27T15:00:00.000Z",
+              ends_at: "2026-04-27T23:00:00.000Z"
+            }
+          ]
+        })
       )
     );
 
@@ -54,6 +83,9 @@ describe("SpaceDetailView", () => {
     expect(screen.getAllByText("Floor 3").length).toBeGreaterThan(0);
     expect(screen.getAllByText("OFFICE_1").length).toBeGreaterThan(0);
     expect(screen.getAllByText("America/Panama").length).toBeGreaterThan(0);
+    expect(await screen.findByText("Daily availability")).toBeInTheDocument();
+    expect(screen.getAllByText("Reserved").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Available").length).toBeGreaterThan(0);
   });
 
   it("renders the error state when the space is missing", async () => {

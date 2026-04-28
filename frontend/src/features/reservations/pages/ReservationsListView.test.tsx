@@ -154,6 +154,10 @@ describe("ReservationsListView", () => {
 
     const cancelButton = await screen.findByRole("button", { name: "Cancel" });
     await user.click(cancelButton);
+    expect(
+      screen.getByRole("dialog", { name: "Cancel reservation" })
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm cancel" }));
 
     await waitFor(() => expect(cancelHits).toBe(1));
     await waitFor(() =>
@@ -194,10 +198,74 @@ describe("ReservationsListView", () => {
 
     const cancelButton = await screen.findByRole("button", { name: "Cancel" });
     await user.click(cancelButton);
+    await user.click(screen.getByRole("button", { name: "Confirm cancel" }));
 
     await waitFor(() =>
       expect(toastError).toHaveBeenCalledWith("Reservation already cancelled.")
     );
     expect(toastSuccess).not.toHaveBeenCalled();
+  });
+
+  it("opens reservation detail when a row is clicked", async () => {
+    server.use(
+      http.get(`${TEST_API_BASE_URL}/reservations`, () =>
+        HttpResponse.json({
+          data: [reservationFixture],
+          pagination: { page: 1, page_size: 10, total: 1 }
+        })
+      ),
+      http.get(`${TEST_API_BASE_URL}/spaces`, () =>
+        HttpResponse.json({ data: [spaceFixture] })
+      )
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<ReservationsListView />);
+
+    await user.click(await screen.findByText("alice@example.com"));
+
+    expect(
+      await screen.findByRole("link", { name: "alice@example.com" })
+    ).toHaveAttribute("href", `/reservations/${RESERVATION_ID}`);
+  });
+
+  it("deletes cancelled reservations after confirmation", async () => {
+    let deleteHits = 0;
+
+    server.use(
+      http.get(`${TEST_API_BASE_URL}/reservations`, () =>
+        HttpResponse.json({
+          data: [
+            {
+              ...reservationFixture,
+              status: "CANCELLED",
+              cancelled_at: "2026-04-27T11:00:00.000Z"
+            }
+          ],
+          pagination: { page: 1, page_size: 10, total: 1 }
+        })
+      ),
+      http.get(`${TEST_API_BASE_URL}/spaces`, () =>
+        HttpResponse.json({ data: [spaceFixture] })
+      ),
+      http.delete(`${TEST_API_BASE_URL}/reservations/${RESERVATION_ID}`, () => {
+        deleteHits += 1;
+        return new HttpResponse(null, { status: 204 });
+      })
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<ReservationsListView />);
+
+    await user.click(await screen.findByRole("button", { name: "Delete" }));
+    expect(
+      screen.getByRole("dialog", { name: "Delete reservation" })
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm delete" }));
+
+    await waitFor(() => expect(deleteHits).toBe(1));
+    await waitFor(() =>
+      expect(toastSuccess).toHaveBeenCalledWith("Reservation deleted.")
+    );
   });
 });

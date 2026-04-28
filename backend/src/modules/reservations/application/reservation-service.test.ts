@@ -48,6 +48,20 @@ const createRepository = (initialReservations: Reservation[] = []) => {
       };
       return reservations[index];
     },
+    delete: async (id) => {
+      const index = reservations.findIndex((reservation) => reservation.id === id);
+      if (index === -1) return false;
+      reservations.splice(index, 1);
+      return true;
+    },
+    findActiveBySpaceBetween: async (spaceId, startsAt, endsAt) =>
+      reservations.filter(
+        (reservation) =>
+          reservation.spaceId === spaceId &&
+          reservation.status === "ACTIVE" &&
+          reservation.startsAt < endsAt &&
+          reservation.endsAt > startsAt
+      ),
     findActiveOverlaps: async (spaceId, startsAt, endsAt, excludeId) =>
       reservations.filter(
         (reservation) =>
@@ -91,6 +105,36 @@ const createSpaceRepository = (spaceId: string, placeId: string) =>
             createdAt: fixedNow,
             updatedAt: fixedNow
           }
+        : null,
+    findOfficeHour: async (_spaceId: string, dayOfWeek: number) =>
+      dayOfWeek >= 1 && dayOfWeek <= 5
+        ? {
+            id: randomUUID(),
+            spaceId: randomUUID(),
+            dayOfWeek,
+            opensAt: "08:00",
+            closesAt: "18:00",
+            isEnabled: true,
+            createdAt: fixedNow,
+            updatedAt: fixedNow
+          }
+        : null
+  }) as never;
+
+const createPlaceRepository = (placeId: string) =>
+  ({
+    findById: async (id: string) =>
+      id === placeId
+        ? {
+            id: placeId,
+            iotSiteId: "SITE_A",
+            name: "Darient HQ",
+            latitude: 8.9824,
+            longitude: -79.5199,
+            timezone: "America/Panama",
+            createdAt: fixedNow,
+            updatedAt: fixedNow
+          }
         : null
   }) as never;
 
@@ -107,6 +151,7 @@ describe("ReservationService", () => {
     const service = new ReservationService(
       createRepository([existing]),
       createSpaceRepository(spaceId, placeId),
+      createPlaceRepository(placeId),
       () => fixedNow
     );
 
@@ -118,7 +163,21 @@ describe("ReservationService", () => {
         startsAt: new Date("2026-04-28T14:30:00.000Z"),
         endsAt: new Date("2026-04-28T15:30:00.000Z")
       })
-    ).rejects.toMatchObject({ code: "RESERVATION_CONFLICT" });
+    ).rejects.toMatchObject({
+      code: "RESERVATION_CONFLICT",
+      details: {
+        available_windows: [
+          {
+            starts_at: "2026-04-28T13:00:00.000Z",
+            ends_at: "2026-04-28T14:00:00.000Z"
+          },
+          {
+            starts_at: "2026-04-28T15:00:00.000Z",
+            ends_at: "2026-04-28T23:00:00.000Z"
+          }
+        ]
+      }
+    });
   });
 
   it("rejects a fourth active reservation in the same Panama week", async () => {
@@ -141,6 +200,7 @@ describe("ReservationService", () => {
     const service = new ReservationService(
       createRepository(existingReservations),
       createSpaceRepository(spaceId, placeId),
+      createPlaceRepository(placeId),
       () => fixedNow
     );
 
@@ -162,6 +222,7 @@ describe("ReservationService", () => {
     const service = new ReservationService(
       createRepository([reservation]),
       createSpaceRepository(spaceId, placeId),
+      createPlaceRepository(placeId),
       () => fixedNow
     );
 
@@ -180,11 +241,99 @@ describe("ReservationService", () => {
     const service = new ReservationService(
       createRepository([expiredReservation]),
       createSpaceRepository(expiredReservation.spaceId, expiredReservation.placeId),
+      createPlaceRepository(expiredReservation.placeId),
       () => fixedNow
     );
 
     const result = await service.list({ page: 1, pageSize: 10 });
 
     expect(result.data[0].status).toBe("EXPIRED");
+  });
+
+  it("deletes a cancelled reservation", async () => {
+    const placeId = randomUUID();
+    const spaceId = randomUUID();
+    const reservation = createReservation({
+      placeId,
+      spaceId,
+      status: "CANCELLED",
+      cancelledAt: fixedNow
+    });
+    const repository = createRepository([reservation]);
+    const service = new ReservationService(
+      repository,
+      createSpaceRepository(spaceId, placeId),
+      createPlaceRepository(placeId),
+      () => fixedNow
+    );
+
+    await service.delete(reservation.id);
+
+    await expect(service.get(reservation.id)).rejects.toMatchObject({
+      code: "RESERVATION_NOT_FOUND"
+    });
+  });
+
+  it("rejects deleting a reservation that is not cancelled", async () => {
+    const placeId = randomUUID();
+    const spaceId = randomUUID();
+    const reservation = createReservation({ placeId, spaceId, status: "ACTIVE" });
+    const service = new ReservationService(
+      createRepository([reservation]),
+      createSpaceRepository(spaceId, placeId),
+      createPlaceRepository(placeId),
+      () => fixedNow
+    );
+
+    await expect(service.delete(reservation.id)).rejects.toMatchObject({
+      code: "RESERVATION_MUST_BE_CANCELLED_BEFORE_DELETE"
+    });
+  });
+
+  it("returns daily availability around active reservations", async () => {
+    const placeId = randomUUID();
+    const spaceId = randomUUID();
+    const existing = createReservation({
+      placeId,
+      spaceId,
+      startsAt: new Date("2026-04-28T14:00:00.000Z"),
+      endsAt: new Date("2026-04-28T15:00:00.000Z")
+    });
+    const service = new ReservationService(
+      createRepository([existing]),
+      createSpaceRepository(spaceId, placeId),
+      createPlaceRepository(placeId),
+      () => fixedNow
+    );
+
+    const availability = await service.getAvailability(spaceId, "2026-04-28");
+
+    expect(availability).toMatchObject({
+      spaceId,
+      date: "2026-04-28",
+      timezone: "America/Panama",
+      officeHours: {
+        opensAt: "08:00",
+        closesAt: "18:00",
+        isEnabled: true
+      },
+      reservedWindows: [
+        {
+          reservationId: existing.id,
+          startsAt: new Date("2026-04-28T14:00:00.000Z"),
+          endsAt: new Date("2026-04-28T15:00:00.000Z")
+        }
+      ],
+      availableWindows: [
+        {
+          startsAt: new Date("2026-04-28T13:00:00.000Z"),
+          endsAt: new Date("2026-04-28T14:00:00.000Z")
+        },
+        {
+          startsAt: new Date("2026-04-28T15:00:00.000Z"),
+          endsAt: new Date("2026-04-28T23:00:00.000Z")
+        }
+      ]
+    });
   });
 });

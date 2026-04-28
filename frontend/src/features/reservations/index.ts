@@ -7,6 +7,7 @@ export {
   reservationsQueryKeys,
   useCancelReservation,
   useCreateReservation,
+  useDeleteReservation,
   useReservation,
   useReservations
 } from "./hooks/use-reservations";
@@ -26,3 +27,4 @@ export {
 export { ReservationStatusBadge } from "./components/ReservationStatusBadge";
 export { ReservationsListView } from "./pages/ReservationsListView";
 export { NewReservationView } from "./pages/NewReservationView";
+export { ReservationDetailView } from "./pages/ReservationDetailView";

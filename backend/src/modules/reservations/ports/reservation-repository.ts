@@ -22,6 +22,12 @@ export type ReservationRepository = {
     id: string,
     input: PersistedReservationUpdateInput
   ): Promise<Reservation | null>;
+  delete(id: string): Promise<boolean>;
+  findActiveBySpaceBetween(
+    spaceId: string,
+    startsAt: Date,
+    endsAt: Date
+  ): Promise<Reservation[]>;
   findActiveOverlaps(
     spaceId: string,
     startsAt: Date,

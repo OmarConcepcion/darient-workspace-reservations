@@ -3,6 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import { prisma } from "../../../shared/prisma/prisma.js";
 import type {
   CreateSpaceInput,
+  OfficeHour,
   Space,
   UpdateSpaceInput
 } from "../domain/space.js";
@@ -26,6 +27,20 @@ export class PrismaSpaceRepository implements SpaceRepository {
   public async findById(id: string): Promise<Space | null> {
     return this.client.space.findUnique({
       where: { id }
+    });
+  }
+
+  public async findOfficeHour(
+    spaceId: string,
+    dayOfWeek: number
+  ): Promise<OfficeHour | null> {
+    return this.client.officeHour.findUnique({
+      where: {
+        spaceId_dayOfWeek: {
+          spaceId,
+          dayOfWeek
+        }
+      }
     });
   }
 

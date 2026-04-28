@@ -34,3 +34,25 @@ export type ReservationPage = {
   page: number;
   pageSize: number;
 };
+
+export type ReservationTimeWindow = {
+  startsAt: Date;
+  endsAt: Date;
+};
+
+export type ReservedTimeWindow = ReservationTimeWindow & {
+  reservationId: string;
+};
+
+export type DailyAvailability = {
+  spaceId: string;
+  date: string;
+  timezone: string;
+  officeHours: {
+    opensAt: string | null;
+    closesAt: string | null;
+    isEnabled: boolean;
+  };
+  reservedWindows: ReservedTimeWindow[];
+  availableWindows: ReservationTimeWindow[];
+};

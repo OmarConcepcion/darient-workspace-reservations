@@ -40,13 +40,18 @@ export const createApp = (
   apiRouter.use("/places", createPlaceRouter(dependencies.placeRepository));
   apiRouter.use(
     "/spaces",
-    createSpaceRouter(dependencies.spaceRepository, dependencies.placeRepository)
+    createSpaceRouter(
+      dependencies.spaceRepository,
+      dependencies.placeRepository,
+      dependencies.reservationRepository
+    )
   );
   apiRouter.use(
     "/reservations",
     createReservationRouter(
       dependencies.reservationRepository,
-      dependencies.spaceRepository
+      dependencies.spaceRepository,
+      dependencies.placeRepository
     )
   );
   apiRouter.use(

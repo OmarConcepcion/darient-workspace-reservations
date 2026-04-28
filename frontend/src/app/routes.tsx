@@ -4,6 +4,7 @@ import { type RouteObject } from "react-router-dom";
 import { Skeleton } from "../shared/ui";
 import { SpaceDetailView, SpacesListView } from "../features/spaces";
 import { HomePage } from "./pages/HomePage";
+import { HelpPage } from "./pages/HelpPage";
 import { RootLayout } from "./RootLayout";
 
 const ReservationsListView = lazy(() =>
@@ -15,6 +16,12 @@ const ReservationsListView = lazy(() =>
 const NewReservationView = lazy(() =>
   import("../features/reservations").then((module) => ({
     default: module.NewReservationView
+  }))
+);
+
+const ReservationDetailView = lazy(() =>
+  import("../features/reservations").then((module) => ({
+    default: module.ReservationDetailView
   }))
 );
 
@@ -57,11 +64,16 @@ export const appRoutes: RouteObject[] = [
         path: "reservations/new",
         element: withFallback(<NewReservationView />)
       },
+      {
+        path: "reservations/:reservation_id",
+        element: withFallback(<ReservationDetailView />)
+      },
       { path: "admin", element: withFallback(<AdminOverviewView />) },
       {
         path: "admin/spaces/:space_id",
         element: withFallback(<SpaceMonitoringView />)
-      }
+      },
+      { path: "help", element: <HelpPage /> }
     ]
   }
 ];

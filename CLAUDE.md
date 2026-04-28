@@ -110,7 +110,7 @@ Domain models are **English**. Do not introduce Spanish identifiers in code.
 ## Reservation rules (do not silently change)
 
 - Statuses: `ACTIVE`, `CANCELLED`, `EXPIRED`. Expiration is computed dynamically on read for MVP — there is no scheduled job.
-- Customers cancel; they do not delete. Cancel sets `status = CANCELLED` + `cancelled_at`.
+- Customers must cancel before deleting. Cancel sets `status = CANCELLED` + `cancelled_at`; hard delete is allowed only for `CANCELLED` reservations.
 - Conflict: `new_start < existing_end AND new_end > existing_start AND same_space AND status = ACTIVE`.
 - Maximum 3 active reservations per `customer_email` per ISO week.
 

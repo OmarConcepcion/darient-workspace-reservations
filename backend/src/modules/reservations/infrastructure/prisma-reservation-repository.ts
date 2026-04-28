@@ -61,6 +61,32 @@ export class PrismaReservationRepository implements ReservationRepository {
     return (result[0] as Reservation | undefined) ?? null;
   }
 
+  public async delete(id: string): Promise<boolean> {
+    const result = await this.client.reservation.deleteMany({
+      where: { id }
+    });
+
+    return result.count > 0;
+  }
+
+  public async findActiveBySpaceBetween(
+    spaceId: string,
+    startsAt: Date,
+    endsAt: Date
+  ): Promise<Reservation[]> {
+    const reservations = await this.client.reservation.findMany({
+      where: {
+        spaceId,
+        status: "ACTIVE",
+        startsAt: { lt: endsAt },
+        endsAt: { gt: startsAt }
+      },
+      orderBy: { startsAt: "asc" }
+    });
+
+    return reservations as Reservation[];
+  }
+
   public async findActiveOverlaps(
     spaceId: string,
     startsAt: Date,

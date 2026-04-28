@@ -60,3 +60,18 @@ export const useCancelReservation = () => {
     }
   });
 };
+
+export const useDeleteReservation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reservationId: string) => reservationsApi.delete(reservationId),
+    onSuccess: (_result, reservationId) => {
+      void queryClient.invalidateQueries({
+        queryKey: reservationsQueryKeys.lists()
+      });
+      void queryClient.removeQueries({
+        queryKey: reservationsQueryKeys.detail(reservationId)
+      });
+    }
+  });
+};

@@ -156,6 +156,24 @@ export const CheckIcon = (props: IconProps) => (
   </svg>
 );
 
+export const HelpCircleIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M9.1 9a3 3 0 1 1 5.8 1c-.5 1.1-1.6 1.6-2.4 2.3-.5.4-.5.8-.5 1.2" />
+    <path d="M12 17h.01" />
+  </svg>
+);
+
+export const TrashIcon = (props: IconProps) => (
+  <svg {...baseProps(props)}>
+    <path d="M3 6h18" />
+    <path d="M8 6V4h8v2" />
+    <path d="M19 6l-1 15H6L5 6" />
+    <path d="M10 11v6" />
+    <path d="M14 11v6" />
+  </svg>
+);
+
 export const ClockIcon = (props: IconProps) => (
   <svg {...baseProps(props)}>
     <circle cx="12" cy="12" r="9" />

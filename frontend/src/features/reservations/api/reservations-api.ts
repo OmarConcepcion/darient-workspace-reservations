@@ -50,5 +50,8 @@ export const reservationsApi = {
       `/reservations/${reservationId}/cancel`
     );
     return reservationSchema.parse(data);
+  },
+  delete: async (reservationId: string): Promise<void> => {
+    await apiClient.delete(`/reservations/${reservationId}`);
   }
 };

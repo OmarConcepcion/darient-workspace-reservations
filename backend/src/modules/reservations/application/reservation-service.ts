@@ -1,7 +1,9 @@
 import { AppError } from "../../../shared/errors/app-error.js";
+import type { PlaceRepository } from "../../places/ports/place-repository.js";
 import type { SpaceRepository } from "../../spaces/ports/space-repository.js";
 import type {
   CreateReservationInput,
+  DailyAvailability,
   Reservation,
   ReservationListInput,
   ReservationPage,
@@ -16,6 +18,7 @@ export class ReservationService {
   public constructor(
     private readonly reservationRepository: ReservationRepository,
     private readonly spaceRepository: SpaceRepository,
+    private readonly placeRepository: PlaceRepository,
     private readonly getNow: () => Date = () => new Date()
   ) {}
 
@@ -109,6 +112,87 @@ export class ReservationService {
     return this.withEffectiveStatus(updated);
   }
 
+  public async delete(id: string): Promise<void> {
+    const existing = await this.getPersisted(id);
+    const effective = this.withEffectiveStatus(existing);
+
+    if (effective.status !== "CANCELLED") {
+      throw new AppError(
+        409,
+        "RESERVATION_MUST_BE_CANCELLED_BEFORE_DELETE",
+        "Reservation must be cancelled before it can be deleted."
+      );
+    }
+
+    const deleted = await this.reservationRepository.delete(id);
+
+    if (!deleted) {
+      throw new AppError(
+        404,
+        "RESERVATION_NOT_FOUND",
+        "Reservation not found."
+      );
+    }
+  }
+
+  public async getAvailability(
+    spaceId: string,
+    date: string
+  ): Promise<DailyAvailability> {
+    this.assertValidDateOnly(date);
+    const { space, timezone } = await this.getSpaceContext(spaceId);
+    const dayOfWeek = getDayOfWeek(date, timezone);
+    const officeHour = await this.spaceRepository.findOfficeHour(
+      space.id,
+      dayOfWeek
+    );
+
+    if (!officeHour || !officeHour.isEnabled) {
+      return {
+        spaceId: space.id,
+        date,
+        timezone,
+        officeHours: {
+          opensAt: officeHour?.opensAt ?? null,
+          closesAt: officeHour?.closesAt ?? null,
+          isEnabled: false
+        },
+        reservedWindows: [],
+        availableWindows: []
+      };
+    }
+
+    const opensAt = zonedDateTimeToUtc(date, officeHour.opensAt, timezone);
+    const closesAt = zonedDateTimeToUtc(date, officeHour.closesAt, timezone);
+    const reservations =
+      await this.reservationRepository.findActiveBySpaceBetween(
+        space.id,
+        opensAt,
+        closesAt
+      );
+    const reservedWindows = reservations
+      .map((reservation) => ({
+        reservationId: reservation.id,
+        startsAt: maxDate(reservation.startsAt, opensAt),
+        endsAt: minDate(reservation.endsAt, closesAt)
+      }))
+      .filter((window) => window.startsAt < window.endsAt)
+      .sort((left, right) => left.startsAt.getTime() - right.startsAt.getTime());
+
+    return {
+      spaceId: space.id,
+      date,
+      timezone,
+      officeHours: {
+        opensAt: officeHour.opensAt,
+        closesAt: officeHour.closesAt,
+        isEnabled: true
+      },
+      reservedWindows,
+      availableWindows: buildAvailableWindows(opensAt, closesAt, reservedWindows)
+    };
+  }
+
   private async getPersisted(id: string): Promise<Reservation> {
     const reservation = await this.reservationRepository.findById(id);
 
@@ -166,12 +250,55 @@ export class ReservationService {
     );
 
     if (overlaps.length > 0) {
+      const availability = await this.getAvailability(
+        spaceId,
+        getDateInTimezone(startsAt, await this.getTimezoneForSpace(spaceId))
+      );
       throw new AppError(
         409,
         "RESERVATION_CONFLICT",
-        "The selected space is already reserved for that time range."
+        "The selected space is already reserved for that time range.",
+        {
+          available_windows: availability.availableWindows.map((window) => ({
+            starts_at: window.startsAt.toISOString(),
+            ends_at: window.endsAt.toISOString()
+          }))
+        }
       );
     }
+  }
+
+  private assertValidDateOnly(date: string): void {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new AppError(
+        400,
+        "INVALID_AVAILABILITY_DATE",
+        "Availability date must use YYYY-MM-DD format."
+      );
+    }
+  }
+
+  private async getSpaceContext(
+    spaceId: string
+  ): Promise<{ space: NonNullable<Awaited<ReturnType<SpaceRepository["findById"]>>>; timezone: string }> {
+    const space = await this.spaceRepository.findById(spaceId);
+
+    if (!space) {
+      throw new AppError(404, "SPACE_NOT_FOUND", "Space not found.");
+    }
+
+    const place = await this.placeRepository.findById(space.placeId);
+
+    if (!place) {
+      throw new AppError(404, "PLACE_NOT_FOUND", "Place not found.");
+    }
+
+    return { space, timezone: place.timezone };
+  }
+
+  private async getTimezoneForSpace(spaceId: string): Promise<string> {
+    const { timezone } = await this.getSpaceContext(spaceId);
+    return timezone;
   }
 
   private async assertWeeklyLimit(
@@ -211,3 +338,118 @@ export class ReservationService {
     return reservation;
   }
 }
+
+const getDayOfWeek = (date: string, timezone: string): number => {
+  const noon = zonedDateTimeToUtc(date, "12:00", timezone);
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    weekday: "short"
+  }).format(noon);
+  const days: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6
+  };
+
+  return days[weekday] ?? noon.getUTCDay();
+};
+
+const getDateInTimezone = (date: Date, timezone: string): string => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value])
+  );
+
+  return `${values.year}-${values.month}-${values.day}`;
+};
+
+const zonedDateTimeToUtc = (
+  date: string,
+  time: string,
+  timezone: string
+): Date => {
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  const targetUtc = Date.UTC(year, month - 1, day, hour, minute);
+  let result = new Date(targetUtc);
+
+  for (let iteration = 0; iteration < 2; iteration += 1) {
+    const parts = getZonedParts(result, timezone);
+    const zonedUtc = Date.UTC(
+      parts.year,
+      parts.month - 1,
+      parts.day,
+      parts.hour,
+      parts.minute
+    );
+    result = new Date(result.getTime() - (zonedUtc - targetUtc));
+  }
+
+  return result;
+};
+
+const getZonedParts = (date: Date, timezone: string) => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date);
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value])
+  );
+
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+    hour: Number(values.hour),
+    minute: Number(values.minute)
+  };
+};
+
+const buildAvailableWindows = (
+  opensAt: Date,
+  closesAt: Date,
+  reservedWindows: Array<{ startsAt: Date; endsAt: Date }>
+) => {
+  const windows: Array<{ startsAt: Date; endsAt: Date }> = [];
+  let cursor = opensAt;
+
+  for (const reserved of reservedWindows) {
+    if (cursor < reserved.startsAt) {
+      windows.push({ startsAt: cursor, endsAt: reserved.startsAt });
+    }
+    if (reserved.endsAt > cursor) {
+      cursor = reserved.endsAt;
+    }
+  }
+
+  if (cursor < closesAt) {
+    windows.push({ startsAt: cursor, endsAt: closesAt });
+  }
+
+  return windows;
+};
+
+const minDate = (left: Date, right: Date): Date =>
+  left < right ? left : right;
+
+const maxDate = (left: Date, right: Date): Date =>
+  left > right ? left : right;

@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -18,19 +18,22 @@ import {
   PageHeader
 } from "../../../shared/ui";
 import { usePlaces } from "../../places";
-import { useSpaces } from "../../spaces";
+import { useSpaceAvailability, useSpaces } from "../../spaces";
+import { ReservationTimeRangeTimeline } from "../components/ReservationTimeRangeTimeline";
 import { useCreateReservation } from "../hooks/use-reservations";
 import {
   newReservationFormSchema,
   type NewReservationFormValues
 } from "../schemas/new-reservation-form";
+import { formatDateTimeRange } from "../utils/date-format";
 
 const defaultValues: NewReservationFormValues = {
   place_id: "",
   space_id: "",
   customer_email: "",
-  starts_at: "",
-  ends_at: ""
+  reservation_date: "",
+  start_time: "",
+  end_time: ""
 };
 
 export const NewReservationView = () => {
@@ -39,6 +42,9 @@ export const NewReservationView = () => {
   const spacesQuery = useSpaces();
   const createMutation = useCreateReservation();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [availableWindows, setAvailableWindows] = useState<
+    Array<{ startsAt: string; endsAt: string }>
+  >([]);
 
   const form = useForm<NewReservationFormValues>({
     resolver: zodResolver(newReservationFormSchema),
@@ -47,10 +53,11 @@ export const NewReservationView = () => {
   });
 
   const selectedPlaceId = form.watch("place_id");
-
-  useEffect(() => {
-    form.setValue("space_id", "", { shouldValidate: false });
-  }, [selectedPlaceId, form]);
+  const selectedSpaceId = form.watch("space_id");
+  const reservationDate = form.watch("reservation_date");
+  const startTime = form.watch("start_time");
+  const endTime = form.watch("end_time");
+  const availabilityQuery = useSpaceAvailability(selectedSpaceId, reservationDate);
 
   const spacesForPlace = useMemo(
     () =>
@@ -60,15 +67,53 @@ export const NewReservationView = () => {
     [spacesQuery.data, selectedPlaceId]
   );
 
+  const clearSubmitFeedback = () => {
+    setSubmitError(null);
+    setAvailableWindows([]);
+    createMutation.reset();
+  };
+
+  const resetTimeFields = () => {
+    form.resetField("start_time", { defaultValue: "" });
+    form.resetField("end_time", { defaultValue: "" });
+  };
+
+  const placeField = form.register("place_id", {
+    onChange: () => {
+      form.resetField("space_id", { defaultValue: "" });
+      form.resetField("reservation_date", { defaultValue: "" });
+      resetTimeFields();
+      clearSubmitFeedback();
+    }
+  });
+
+  const spaceField = form.register("space_id", {
+    onChange: () => {
+      resetTimeFields();
+      clearSubmitFeedback();
+    }
+  });
+
+  const reservationDateField = form.register("reservation_date", {
+    onChange: () => {
+      resetTimeFields();
+      clearSubmitFeedback();
+    }
+  });
+
   const onSubmit = form.handleSubmit((values) => {
     setSubmitError(null);
+    setAvailableWindows([]);
+    const startsAt = `${values.reservation_date}T${values.start_time}`;
+    const endsAt = `${values.reservation_date}T${values.end_time}`;
+
     createMutation.mutate(
       {
         placeId: values.place_id,
         spaceId: values.space_id,
         customerEmail: values.customer_email,
-        startsAt: new Date(values.starts_at).toISOString(),
-        endsAt: new Date(values.ends_at).toISOString()
+        startsAt: new Date(startsAt).toISOString(),
+        endsAt: new Date(endsAt).toISOString()
       },
       {
         onSuccess: () => {
@@ -77,8 +122,10 @@ export const NewReservationView = () => {
           navigate("/reservations");
         },
         onError: (error) => {
-          const message = normalizeApiError(error).message;
+          const apiError = normalizeApiError(error);
+          const message = apiError.message;
           setSubmitError(message);
+          setAvailableWindows(extractAvailableWindows(apiError.details));
           toast.error(message);
         }
       }
@@ -100,7 +147,7 @@ export const NewReservationView = () => {
       <PageHeader
         eyebrow="New booking"
         title="Create reservation"
-        description="Pick a place and space, then choose a time window. We'll handle the rest."
+        description="Pick a place and space, then choose one day and the hourly range for your reservation."
       />
 
       <motion.div
@@ -125,7 +172,7 @@ export const NewReservationView = () => {
                   >
                     <select
                       id="place_id"
-                      {...form.register("place_id")}
+                      {...placeField}
                       disabled={placesQuery.isLoading || placesQuery.isError}
                       className={inputStyles(Boolean(errors.place_id))}
                     >
@@ -152,7 +199,7 @@ export const NewReservationView = () => {
                   >
                     <select
                       id="space_id"
-                      {...form.register("space_id")}
+                      {...spaceField}
                       disabled={!selectedPlaceId || spacesForPlace.length === 0}
                       className={inputStyles(Boolean(errors.space_id))}
                     >
@@ -199,36 +246,70 @@ export const NewReservationView = () => {
                 <div>
                   <h2 className="text-lg font-semibold text-slate-950">When</h2>
                   <p className="text-sm text-slate-500">
-                    Choose the start and end date and time for your reservation.
+                    Choose a reservation date, then define the start and end hour inside that same day.
                   </p>
                 </div>
               </div>
 
-              <div className="grid gap-5 lg:grid-cols-2">
+              <div className="grid gap-5 lg:grid-cols-3">
                 <Field
-                  id="starts_at"
-                  label="Starts at"
-                  error={errors.starts_at?.message}
+                  id="reservation_date"
+                  label="Reservation date"
+                  error={errors.reservation_date?.message}
+                  hint="This day will be used for both the start and end timestamps."
                 >
                   <input
-                    id="starts_at"
-                    type="datetime-local"
-                    {...form.register("starts_at")}
-                    className={inputStyles(Boolean(errors.starts_at))}
+                    id="reservation_date"
+                    type="date"
+                    {...reservationDateField}
+                    className={inputStyles(Boolean(errors.reservation_date))}
                   />
                 </Field>
                 <Field
-                  id="ends_at"
-                  label="Ends at"
-                  error={errors.ends_at?.message}
+                  id="start_time"
+                  label="Start time"
+                  error={errors.start_time?.message}
+                  hint="Pick the hour when the reservation should begin."
                 >
                   <input
-                    id="ends_at"
-                    type="datetime-local"
-                    {...form.register("ends_at")}
-                    className={inputStyles(Boolean(errors.ends_at))}
+                    id="start_time"
+                    type="time"
+                    step={3600}
+                    {...form.register("start_time")}
+                    className={inputStyles(Boolean(errors.start_time))}
                   />
                 </Field>
+                <Field
+                  id="end_time"
+                  label="End time"
+                  error={errors.end_time?.message}
+                  hint="Pick the hour when the reservation should finish."
+                >
+                  <input
+                    id="end_time"
+                    type="time"
+                    step={3600}
+                    {...form.register("end_time")}
+                    className={inputStyles(Boolean(errors.end_time))}
+                  />
+                </Field>
+              </div>
+
+              <div className="mt-6">
+                <ReservationTimeRangeTimeline
+                  reservationDate={reservationDate}
+                  startTime={startTime}
+                  endTime={endTime}
+                  availableWindows={availabilityQuery.data?.availableWindows ?? []}
+                  reservedWindows={availabilityQuery.data?.reservedWindows ?? []}
+                  isLoading={availabilityQuery.isLoading}
+                  isReady={
+                    typeof selectedSpaceId === "string" &&
+                    selectedSpaceId.length > 0 &&
+                    /^\d{4}-\d{2}-\d{2}$/.test(reservationDate)
+                  }
+                  isError={availabilityQuery.isError}
+                />
               </div>
             </div>
 
@@ -242,6 +323,24 @@ export const NewReservationView = () => {
                   <div>
                     <p className="font-semibold">Cannot create reservation</p>
                     <p className="mt-1">{submitError}</p>
+                    {availableWindows.length > 0 ? (
+                      <div className="mt-4 border-t border-rose-200 pt-4">
+                        <p className="font-semibold text-rose-900">
+                          Available today for this space
+                        </p>
+                        <ul className="mt-2 space-y-1">
+                          {availableWindows.map((window) => (
+                            <li key={`${window.startsAt}-${window.endsAt}`}>
+                              {formatDateTimeRange(window.startsAt, window.endsAt)}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : createMutation.isError ? (
+                      <p className="mt-3 font-medium text-rose-900">
+                        No available windows remain for this space on the selected day.
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -295,6 +394,31 @@ const inputStyles = (hasError: boolean): string =>
       : "border-slate-200 hover:border-slate-300 focus:border-brand-400 focus:ring-brand-100",
     "disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
   );
+
+const extractAvailableWindows = (
+  details: Record<string, unknown>
+): Array<{ startsAt: string; endsAt: string }> => {
+  const windows = details.available_windows;
+  if (!Array.isArray(windows)) return [];
+
+  return windows.flatMap((window) => {
+    if (
+      typeof window === "object" &&
+      window !== null &&
+      "starts_at" in window &&
+      "ends_at" in window
+    ) {
+      return [
+        {
+          startsAt: String(window.starts_at),
+          endsAt: String(window.ends_at)
+        }
+      ];
+    }
+
+    return [];
+  });
+};
 
 type FormSectionProps = {
   icon: React.ReactNode;

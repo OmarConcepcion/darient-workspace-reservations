@@ -44,6 +44,20 @@ const createRepositories = () => {
       };
       return reservations[index];
     },
+    delete: async (id) => {
+      const index = reservations.findIndex((reservation) => reservation.id === id);
+      if (index === -1) return false;
+      reservations.splice(index, 1);
+      return true;
+    },
+    findActiveBySpaceBetween: async (targetSpaceId, startsAt, endsAt) =>
+      reservations.filter(
+        (reservation) =>
+          reservation.spaceId === targetSpaceId &&
+          reservation.status === "ACTIVE" &&
+          reservation.startsAt < endsAt &&
+          reservation.endsAt > startsAt
+      ),
     findActiveOverlaps: async (targetSpaceId, startsAt, endsAt, excludeId) =>
       reservations.filter(
         (reservation) =>
@@ -109,6 +123,19 @@ const createRepositories = () => {
                 locationReference: null,
                 capacity: 4,
                 description: null,
+                createdAt: fixedNow,
+                updatedAt: fixedNow
+              }
+            : null,
+        findOfficeHour: async (_id: string, dayOfWeek: number) =>
+          dayOfWeek >= 1 && dayOfWeek <= 5
+            ? {
+                id: randomUUID(),
+                spaceId,
+                dayOfWeek,
+                opensAt: "08:00",
+                closesAt: "18:00",
+                isEnabled: true,
                 createdAt: fixedNow,
                 updatedAt: fixedNow
               }
@@ -181,5 +208,79 @@ describe("reservation routes", () => {
     expect(cancelResponse.status).toBe(200);
     expect(cancelResponse.body.status).toBe("CANCELLED");
     expect(cancelResponse.body.cancelled_at).toBeTruthy();
+  });
+
+  it("deletes a reservation only after it is cancelled", async () => {
+    const { dependencies, placeId, spaceId } = createRepositories();
+    const app = createApp(dependencies);
+
+    const createResponse = await request(app)
+      .post("/api/v1/reservations")
+      .set(apiKey)
+      .send({
+        place_id: placeId,
+        space_id: spaceId,
+        customer_email: "client@example.com",
+        starts_at: "2026-04-28T14:00:00.000Z",
+        ends_at: "2026-04-28T15:00:00.000Z"
+      });
+
+    const blockedDeleteResponse = await request(app)
+      .delete(`/api/v1/reservations/${createResponse.body.id}`)
+      .set(apiKey);
+
+    expect(blockedDeleteResponse.status).toBe(409);
+    expect(blockedDeleteResponse.body.error.code).toBe(
+      "RESERVATION_MUST_BE_CANCELLED_BEFORE_DELETE"
+    );
+
+    await request(app)
+      .patch(`/api/v1/reservations/${createResponse.body.id}/cancel`)
+      .set(apiKey);
+
+    const deleteResponse = await request(app)
+      .delete(`/api/v1/reservations/${createResponse.body.id}`)
+      .set(apiKey);
+
+    expect(deleteResponse.status).toBe(204);
+  });
+
+  it("returns available windows when a reservation conflicts", async () => {
+    const { dependencies, placeId, spaceId } = createRepositories();
+    const app = createApp(dependencies);
+
+    await request(app)
+      .post("/api/v1/reservations")
+      .set(apiKey)
+      .send({
+        place_id: placeId,
+        space_id: spaceId,
+        customer_email: "client@example.com",
+        starts_at: "2026-04-28T14:00:00.000Z",
+        ends_at: "2026-04-28T15:00:00.000Z"
+      });
+
+    const conflictResponse = await request(app)
+      .post("/api/v1/reservations")
+      .set(apiKey)
+      .send({
+        place_id: placeId,
+        space_id: spaceId,
+        customer_email: "other@example.com",
+        starts_at: "2026-04-28T14:30:00.000Z",
+        ends_at: "2026-04-28T15:30:00.000Z"
+      });
+
+    expect(conflictResponse.status).toBe(409);
+    expect(conflictResponse.body.error.details.available_windows).toEqual([
+      {
+        starts_at: "2026-04-28T13:00:00.000Z",
+        ends_at: "2026-04-28T14:00:00.000Z"
+      },
+      {
+        starts_at: "2026-04-28T15:00:00.000Z",
+        ends_at: "2026-04-28T23:00:00.000Z"
+      }
+    ]);
   });
 });

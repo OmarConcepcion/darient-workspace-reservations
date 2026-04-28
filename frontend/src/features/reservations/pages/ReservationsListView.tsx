@@ -1,5 +1,5 @@
 import { useDeferredValue, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { normalizeApiError } from "../../../shared/api/errors";
@@ -11,31 +11,39 @@ import {
   ChevronDownIcon,
   EmptyState,
   ErrorState,
+  Modal,
   PageHeader,
   PlusIcon,
   RefreshIcon,
   SearchIcon,
-  Skeleton
+  Skeleton,
+  TrashIcon
 } from "../../../shared/ui";
 import { useSpaces, type Space } from "../../spaces";
 import { ReservationStatusBadge } from "../components/ReservationStatusBadge";
 import {
   useCancelReservation,
+  useDeleteReservation,
   useReservations
 } from "../hooks/use-reservations";
 import type { Reservation } from "../schemas/reservation";
+import { formatDateTimeRange } from "../utils/date-format";
 
 const PAGE_SIZE = 10;
 const STATUS_OPTIONS = ["all", "ACTIVE", "CANCELLED", "EXPIRED"] as const;
 
 export const ReservationsListView = () => {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [spaceFilter, setSpaceFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>("all");
+  const [pendingCancel, setPendingCancel] = useState<Reservation | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Reservation | null>(null);
   const reservationsQuery = useReservations({ page, pageSize: PAGE_SIZE });
   const spacesQuery = useSpaces();
   const cancelMutation = useCancelReservation();
+  const deleteMutation = useDeleteReservation();
   const deferredSearch = useDeferredValue(search);
 
   const spacesById = useMemo(() => {
@@ -48,7 +56,20 @@ export const ReservationsListView = () => {
 
   const handleCancel = (reservation: Reservation) => {
     cancelMutation.mutate(reservation.id, {
-      onSuccess: () => toast.success("Reservation cancelled."),
+      onSuccess: () => {
+        setPendingCancel(null);
+        toast.success("Reservation cancelled.");
+      },
+      onError: (error) => toast.error(normalizeApiError(error).message)
+    });
+  };
+
+  const handleDelete = (reservation: Reservation) => {
+    deleteMutation.mutate(reservation.id, {
+      onSuccess: () => {
+        setPendingDelete(null);
+        toast.success("Reservation deleted.");
+      },
       onError: (error) => toast.error(normalizeApiError(error).message)
     });
   };
@@ -215,7 +236,8 @@ export const ReservationsListView = () => {
                 {filteredReservations.map((reservation) => (
                   <tr
                     key={reservation.id}
-                    className="transition hover:bg-slate-50/70"
+                    className="cursor-pointer transition hover:bg-slate-50/70 focus-within:bg-slate-50/70"
+                    onClick={() => navigate(`/reservations/${reservation.id}`)}
                   >
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
@@ -223,9 +245,13 @@ export const ReservationsListView = () => {
                           {reservation.customerEmail.charAt(0)}
                         </span>
                         <div>
-                          <p className="font-semibold text-slate-950">
+                          <Link
+                            to={`/reservations/${reservation.id}`}
+                            onClick={(event) => event.stopPropagation()}
+                            className="font-semibold text-slate-950 transition hover:text-brand-700"
+                          >
                             {reservation.customerEmail}
-                          </p>
+                          </Link>
                           <p className="text-xs text-slate-500">Customer</p>
                         </div>
                       </div>
@@ -236,17 +262,21 @@ export const ReservationsListView = () => {
                       </span>
                     </td>
                     <td className="px-6 py-5 text-slate-600">
-                      {formatRange(reservation.startsAt, reservation.endsAt)}
+                      {formatDateTimeRange(reservation.startsAt, reservation.endsAt)}
                     </td>
                     <td className="px-6 py-5">
                       <ReservationStatusBadge status={reservation.status} />
                     </td>
                     <td className="px-6 py-5 text-right">
-                      {reservation.status === "ACTIVE" ? (
+                      <div
+                        className="flex justify-end gap-2"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        {reservation.status === "ACTIVE" ? (
                         <Button
                           variant="danger"
                           size="sm"
-                          onClick={() => handleCancel(reservation)}
+                          onClick={() => setPendingCancel(reservation)}
                           disabled={
                             cancelMutation.isPending &&
                             cancelMutation.variables === reservation.id
@@ -257,7 +287,25 @@ export const ReservationsListView = () => {
                             ? "Cancelling…"
                             : "Cancel"}
                         </Button>
-                      ) : null}
+                        ) : null}
+                        {reservation.status === "CANCELLED" ? (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => setPendingDelete(reservation)}
+                            disabled={
+                              deleteMutation.isPending &&
+                              deleteMutation.variables === reservation.id
+                            }
+                          >
+                            <TrashIcon size={14} />
+                            {deleteMutation.isPending &&
+                            deleteMutation.variables === reservation.id
+                              ? "Deleting..."
+                              : "Delete"}
+                          </Button>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -297,14 +345,50 @@ export const ReservationsListView = () => {
           </div>
         </nav>
       ) : null}
+
+      <Modal
+        isOpen={pendingCancel !== null}
+        title="Cancel reservation"
+        description="This will mark the reservation as cancelled. You can delete it after cancellation if you no longer need the record."
+        onClose={() => setPendingCancel(null)}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setPendingCancel(null)}>
+              Keep reservation
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => pendingCancel && handleCancel(pendingCancel)}
+              disabled={cancelMutation.isPending}
+            >
+              Confirm cancel
+            </Button>
+          </>
+        }
+      />
+
+      <Modal
+        isOpen={pendingDelete !== null}
+        title="Delete reservation"
+        description="This permanently removes the cancelled reservation from the system."
+        onClose={() => setPendingDelete(null)}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setPendingDelete(null)}>
+              Keep record
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => pendingDelete && handleDelete(pendingDelete)}
+              disabled={deleteMutation.isPending}
+            >
+              Confirm delete
+            </Button>
+          </>
+        }
+      />
     </section>
   );
-};
-
-const formatRange = (startsAt: string, endsAt: string): string => {
-  const start = new Date(startsAt);
-  const end = new Date(endsAt);
-  return `${start.toLocaleString()} -> ${end.toLocaleTimeString()}`;
 };
 
 type FilterSelectProps = {

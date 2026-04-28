@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
@@ -48,5 +49,32 @@ describe("App", () => {
       screen.getByRole("link", { name: "Reservations" })
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Admin" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /help/i })).toHaveAttribute(
+      "href",
+      "/help"
+    );
+  });
+
+  it("renders the help page with a Swagger link", async () => {
+    server.use(
+      http.get(`${TEST_API_BASE_URL}/admin/events/stream`, () =>
+        new HttpResponse(emptyEventStream(), {
+          headers: { "Content-Type": "text/event-stream" }
+        })
+      )
+    );
+
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("link", { name: /help/i }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Help" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open swagger/i })).toHaveAttribute(
+      "href",
+      "http://localhost:3000/api/v1/docs"
+    );
   });
 });

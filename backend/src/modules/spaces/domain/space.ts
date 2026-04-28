@@ -10,6 +10,17 @@ export type Space = {
   updatedAt: Date;
 };
 
+export type OfficeHour = {
+  id: string;
+  spaceId: string;
+  dayOfWeek: number;
+  opensAt: string;
+  closesAt: string;
+  isEnabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export type CreateSpaceInput = {
   placeId: string;
   iotOfficeId: string;

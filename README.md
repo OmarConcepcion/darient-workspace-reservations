@@ -15,7 +15,8 @@ Backend + frontend completos para reservas y monitoreo IoT en tiempo real:
 - Prisma multi-schema con `core`, `iot` y `audit`.
 - Seed inicial para `SITE_A`, `OFFICE_1` y `OFFICE_2`.
 - CRUD core de places, spaces y reservations.
-- Reglas de reservas: conflicto de horario, máximo 3 activas por cliente por semana, cancelación y expiración dinámica.
+- Reglas de reservas: conflicto de horario, máximo 3 activas por cliente por semana, cancelación, eliminación solo después de cancelar y expiración dinámica.
+- Disponibilidad diaria por espacio calculada desde office hours y reservas activas.
 - Procesamiento backend de tópicos `telemetry` y `reported`.
 - Endpoints admin IoT, publicación de `desired` por MQTT, stream SSE y manejo explícito de error `502` si falla el publish.
 - Runtime MQTT compartido con startup/shutdown ordenado y logs operativos.
@@ -25,8 +26,9 @@ Backend + frontend completos para reservas y monitoreo IoT en tiempo real:
 
 - Vite/React 19 con React Router, Axios, TanStack Query, Tailwind v4, Sonner y MSW.
 - Sistema visual indigo con primitivos compartidos en `src/shared/ui` (Button, Card, Badge, EmptyState, ErrorState, PageHeader, Skeleton, iconos inline).
-- Spaces: lista y detalle con loading/empty/error, animaciones con Motion.
-- Reservations: lista paginada con cancel, formulario RHF + Zod con selectores cascading place → space y conversión datetime-local → ISO UTC.
+- Spaces: lista y detalle con loading/empty/error, calendario diario de disponibilidad y animaciones con Motion.
+- Reservations: lista paginada clickeable, detalle propio, cancelación con modal, eliminación solo para reservas canceladas, formulario RHF + Zod con selectores cascading place → space, una sola fecha de reserva, rango horario visual y conversión a `starts_at` / `ends_at` ISO UTC.
+- Help: página `/help` enlazada desde el header junto al indicador IoT con acceso a Swagger.
 - Admin dashboard: monitoring snapshot, stat cards, Recharts live chart, panel desired vs reported, RHF form de control de dispositivo, alerts table.
 - SSE consumido vía `fetch` + `ReadableStream` (para enviar `x-api-key`) con reconexión exponencial y refresh inteligente de queries.
 - Code splitting por ruta (`React.lazy`) — admin/reservations son chunks independientes.
@@ -201,6 +203,7 @@ DELETE /api/v1/places/:place_id
 ```http
 GET    /api/v1/spaces
 GET    /api/v1/spaces/:space_id
+GET    /api/v1/spaces/:space_id/availability?date=YYYY-MM-DD
 POST   /api/v1/spaces
 PATCH  /api/v1/spaces/:space_id
 DELETE /api/v1/spaces/:space_id
@@ -212,6 +215,7 @@ GET   /api/v1/reservations/:reservation_id
 POST  /api/v1/reservations
 PATCH /api/v1/reservations/:reservation_id
 PATCH /api/v1/reservations/:reservation_id/cancel
+DELETE /api/v1/reservations/:reservation_id
 ```
 
 ```http
@@ -225,12 +229,14 @@ Si falla la publicación MQTT de `device_desired`, el backend responde `502` con
 
 ## Reglas de reservas
 
-- El cliente no elimina reservas desde la interfaz; solo cancela.
+- El requerimiento original permitía eliminar reservas; la decisión actual es exigir cancelar primero y permitir eliminación solo si `status = CANCELLED`.
 - Cancelar cambia `status = CANCELLED`.
+- Eliminar una reserva `ACTIVE` o `EXPIRED` responde `409 RESERVATION_MUST_BE_CANCELLED_BEFORE_DELETE`.
 - Estados: `ACTIVE`, `CANCELLED`, `EXPIRED`.
 - Expiración se calcula dinámicamente al listar/detallar para MVP.
 - No puede existir solapamiento para el mismo espacio.
 - Máximo 3 reservas activas por cliente por semana.
+- Los conflictos al crear/actualizar incluyen `error.details.available_windows` con ventanas disponibles para el día seleccionado.
 
 Regla de conflicto:
 

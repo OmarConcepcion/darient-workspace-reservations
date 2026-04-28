@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { normalizeApiError } from "../../../shared/api/errors";
@@ -15,15 +16,20 @@ import {
   MapPinIcon,
   Skeleton,
   UsersIcon,
-  buttonClasses
+  buttonClasses,
+  cn
 } from "../../../shared/ui";
 import { usePlace } from "../../places";
-import { useSpace } from "../hooks/use-spaces";
+import { formatDateTimeRange, todayDateInputValue } from "../../reservations/utils/date-format";
+import { useSpace, useSpaceAvailability } from "../hooks/use-spaces";
+import type { SpaceAvailability } from "../schemas/space";
 
 export const SpaceDetailView = () => {
   const { space_id: spaceId } = useParams<{ space_id: string }>();
+  const [selectedDate, setSelectedDate] = useState(todayDateInputValue);
   const spaceQuery = useSpace(spaceId);
   const placeQuery = usePlace(spaceQuery.data?.placeId);
+  const availabilityQuery = useSpaceAvailability(spaceQuery.data?.id, selectedDate);
 
   return (
     <section className="space-y-8">
@@ -144,6 +150,14 @@ export const SpaceDetailView = () => {
                 </p>
               </Card>
             </section>
+
+            <AvailabilityCalendar
+              availability={availabilityQuery.data}
+              isLoading={availabilityQuery.isLoading}
+              isError={availabilityQuery.isError}
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+            />
           </div>
 
           <aside className="space-y-5">
@@ -256,5 +270,112 @@ const SidebarStat = ({ label, value }: { label: string; value: string }) => (
   <div className="flex items-center justify-between gap-4">
     <dt className="text-slate-500">{label}</dt>
     <dd className="truncate text-right font-semibold text-slate-950">{value}</dd>
+  </div>
+);
+
+const AvailabilityCalendar = ({
+  availability,
+  isLoading,
+  isError,
+  selectedDate,
+  onDateChange
+}: {
+  availability?: SpaceAvailability;
+  isLoading: boolean;
+  isError: boolean;
+  selectedDate: string;
+  onDateChange: (date: string) => void;
+}) => (
+  <section className="space-y-4">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h2 className="text-xl font-semibold tracking-tight text-slate-950">
+          Daily availability
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Availability is calculated from office hours and active reservations.
+        </p>
+      </div>
+      <label className="text-sm font-semibold text-slate-700">
+        Date
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(event) => onDateChange(event.target.value)}
+          className="mt-1 block min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100"
+        />
+      </label>
+    </div>
+
+    <Card className="p-5">
+      {isLoading ? (
+        <Skeleton className="h-32" />
+      ) : isError ? (
+        <ErrorState
+          title="Availability unavailable"
+          message="We couldn't load this space's daily availability."
+        />
+      ) : availability ? (
+        <div className="space-y-5">
+          <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 ring-1 ring-emerald-100">
+              Available
+            </span>
+            <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700 ring-1 ring-rose-100">
+              Reserved
+            </span>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            <WindowList
+              title="Available"
+              tone="available"
+              empty="No available windows remain for this day."
+              windows={availability.availableWindows}
+            />
+            <WindowList
+              title="Reserved"
+              tone="reserved"
+              empty="No reserved windows on this day."
+              windows={availability.reservedWindows}
+            />
+          </div>
+        </div>
+      ) : null}
+    </Card>
+  </section>
+);
+
+const WindowList = ({
+  title,
+  tone,
+  empty,
+  windows
+}: {
+  title: string;
+  tone: "available" | "reserved";
+  empty: string;
+  windows: Array<{ startsAt: string; endsAt: string }>;
+}) => (
+  <div>
+    <h3 className="text-sm font-semibold text-slate-950">{title}</h3>
+    {windows.length === 0 ? (
+      <p className="mt-2 text-sm text-slate-500">{empty}</p>
+    ) : (
+      <ul className="mt-3 space-y-2">
+        {windows.map((window) => (
+          <li
+            key={`${window.startsAt}-${window.endsAt}`}
+            className={cn(
+              "rounded-2xl border px-4 py-3 text-sm font-semibold",
+              tone === "available"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-rose-200 bg-rose-50 text-rose-800"
+            )}
+          >
+            {formatDateTimeRange(window.startsAt, window.endsAt)}
+          </li>
+        ))}
+      </ul>
+    )}
   </div>
 );

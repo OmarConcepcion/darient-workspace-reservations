@@ -6,6 +6,7 @@ import {
   BuildingIcon,
   CalendarIcon,
   cn,
+  HelpCircleIcon,
   SparklesIcon
 } from "../shared/ui";
 
@@ -82,8 +83,22 @@ export const RootLayout = () => {
             </nav>
           </div>
 
-          <div className="lg:ml-auto">
+          <div className="flex items-center gap-2 lg:ml-auto">
             <IotConnectionBadge status={iotStatus} />
+            <NavLink
+              to="/help"
+              aria-label="Help"
+              className={({ isActive }) =>
+                cn(
+                  "inline-flex h-10 w-10 items-center justify-center rounded-full border text-slate-500 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
+                  isActive
+                    ? "border-brand-200 bg-brand-50 text-brand-700"
+                    : "border-slate-200 bg-white"
+                )
+              }
+            >
+              <HelpCircleIcon size={18} />
+            </NavLink>
           </div>
         </div>
       </header>
