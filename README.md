@@ -255,6 +255,8 @@ npm install --prefix frontend
 npm run setup:env
 ```
 
+`npm run setup:env` en la raíz solo inicializa `backend/.env` y `frontend/.env`. Este workspace ya no usa un `.env` en la raíz.
+
 Backend:
 
 ```bash

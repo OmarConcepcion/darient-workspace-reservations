@@ -2,7 +2,6 @@ import { existsSync, copyFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const files = [
-  [".env.example", ".env"],
   ["backend/.env.example", "backend/.env"],
   ["frontend/.env.example", "frontend/.env"]
 ];

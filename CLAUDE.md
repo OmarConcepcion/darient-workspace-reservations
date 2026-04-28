@@ -50,7 +50,7 @@ If the MQTT publish for `desired` fails, the backend persists `device_desired` w
 Root (delegates to workspaces):
 
 ```bash
-npm run setup:env         # copies .env.example → .env in root, backend, frontend
+npm run setup:env         # copies backend/.env.example → backend/.env and frontend/.env.example → frontend/.env
 npm run build             # backend build + frontend build
 npm test                  # backend vitest + frontend vitest
 npm run docker:up         # docker compose up --build
@@ -84,7 +84,7 @@ npm test                  # vitest run (jsdom + RTL + MSW)
 
 ## Environment
 
-Local dev uses `localhost` URLs (`backend/.env.example`); Docker overrides via service hostnames (`darient_postgres`, `darient_mqtt`) in `docker-compose.yml`. Always run `npm run setup:env` before first dev — it only copies if the target is missing, never overwrites.
+Local dev uses `localhost` URLs (`backend/.env.example`); Docker overrides via service hostnames (`darient_postgres`, `darient_mqtt`) in `docker-compose.yml`. Always run `npm run setup:env` before first dev — it only copies `backend/.env` and `frontend/.env` if they are missing, never overwrites. This workspace no longer keeps a `.env` file in the project root.
 
 Auth on every non-`/health`, non-`/docs` route: header `x-api-key: $API_KEY`.
 

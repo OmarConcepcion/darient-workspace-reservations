@@ -43,3 +43,4 @@
 - [x] Space detail daily availability calendar implemented.
 - [x] Help page with Swagger link implemented.
 - [x] Reservation create flow updated to use one day plus hourly range with visual availability reference.
+- [x] Root environment files removed; workspace env setup now initializes only backend and frontend app environments.

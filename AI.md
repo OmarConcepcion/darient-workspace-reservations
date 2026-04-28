@@ -97,3 +97,4 @@ Este documento debe actualizarse si la AI se usa para generar código, tests o d
 | Reservation single-day time range | Formulario de reserva con una sola fecha, hora inicio/fin, timeline visual de disponibilidad y payload ISO compatible con el backend actual |
 | Help + Docs alignment | Página `/help` con enlace a Swagger, actualización de contracts, requirements, status y fases raíz completadas |
 | OpenAPI coverage fix | Swagger/OpenAPI documenta health, places, spaces, reservations y admin IoT con schemas compartidos, errores reutilizables y contrato SSE |
+| Environment ownership cleanup | Se eliminó el `.env` de la raíz, el setup del workspace ahora solo inicializa `backend/.env` y `frontend/.env`, y la documentación quedó alineada al ownership por app |
